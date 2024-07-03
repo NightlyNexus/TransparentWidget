@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Transparent Widget</string>
+  <string name="app_widget_description">Can launch an app when clicked</string>
+  <string name="pin_widget_not_supported">Add Transparent Widget from your home screen widget list</string>
+  <string name="no_component_option">Do nothing on click</string>
+  <string name="no_component_option_sub">or select a launch app below</string>
+  <string name="app_icon_content_description">%1$s icon</string>
+  <string name="activity_icon_content_description">%1$s icon</string>
+  <string name="collapse_content_description">Collapse</string>
+  <string name="expand_content_description">Expand</string>
+</resources>
