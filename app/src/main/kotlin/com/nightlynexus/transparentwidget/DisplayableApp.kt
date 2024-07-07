@@ -7,6 +7,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.icu.text.Collator
+import android.icu.util.ULocale
 import android.os.Build.VERSION.SDK_INT
 import androidx.annotation.WorkerThread
 import java.util.Locale
@@ -15,7 +16,7 @@ import kotlin.concurrent.Volatile
 internal class DisplayableApp(
   val packageInfo: PackageInfo,
   val label: String,
-  val firstLetter: String,
+  val firstLetter: CharSequence,
   val launchIntent: Intent?,
   val displayActivities: List<DisplayableActivity>
 ) {
@@ -47,7 +48,7 @@ internal class DisplayableApp(
 
     @WorkerThread fun loadIcon(
       packageManager: PackageManager
-    ):Drawable {
+    ): Drawable {
       val loadedIcon = activityInfo.loadIcon(packageManager)
       icon = loadedIcon
       return loadedIcon
@@ -55,7 +56,7 @@ internal class DisplayableApp(
 
     @WorkerThread fun loadLabel(
       packageManager: PackageManager
-    ):String {
+    ): String {
       val loadedLabel = activityInfo.loadLabel(packageManager).toString()
       label = loadedLabel
       return loadedLabel
@@ -73,25 +74,30 @@ internal class DisplayableApp(
 
 @WorkerThread internal fun PackageManager.loadDisplayableApps(): List<DisplayableApp> {
   val installedPackages = getInstalledPackages(PackageManager.GET_ACTIVITIES)
+  val locale = Locale.getDefault()
   val displayableApps = ArrayList<DisplayableApp>()
   for (packageInfo in installedPackages) {
     val appLabel = packageInfo.applicationInfo.loadLabel(this).toString()
-    val firstLetter = if (appLabel.isEmpty()) {
-      ""
-    } else {
-      appLabel.substring(
-        0,
-        appLabel.offsetByCodePoints(0, 1)
-      ).uppercase(
-        Locale.getDefault()
-      )
-    }
     val launchIntent = getLaunchIntentForPackage(packageInfo.packageName)
     val packageActivities = packageInfo.activities
     if (packageActivities == null) {
       check(launchIntent == null)
     } else {
       check(packageActivities.isNotEmpty())
+      val firstLetter = if (appLabel.isEmpty()) {
+        ""
+      } else {
+        appLabel.substring(
+          0,
+          appLabel.offsetByCodePoints(0, 1)
+        ).run {
+          if (launchIntent == null) {
+            lowercase(locale)
+          } else {
+            uppercase(locale)
+          }
+        }
+      }
       val activities = ArrayList<DisplayableApp.DisplayableActivity>()
       for (packageActivity in packageActivities) {
         if (packageActivity.exported) {
@@ -114,11 +120,26 @@ internal class DisplayableApp(
       }
     }
   }
-  val collator = Collator.getInstance(Locale.getDefault()).apply {
+  val collator = Collator.getInstance(ULocale.getDefault()).apply {
     strength = Collator.PRIMARY
   }
   displayableApps.sortWith { displayableApp1, displayableApp2 ->
-    collator.compare(displayableApp1.label, displayableApp2.label)
+    if (displayableApp1.launchIntent != null && displayableApp2.launchIntent == null) {
+      return@sortWith -1
+    }
+    if (displayableApp1.launchIntent == null && displayableApp2.launchIntent != null) {
+      return@sortWith 1
+    }
+    val caseInsensitiveAppNameComparison = collator.compare(
+      displayableApp1.label,
+      displayableApp2.label
+    )
+    if (caseInsensitiveAppNameComparison != 0) {
+      return@sortWith caseInsensitiveAppNameComparison
+    }
+    return@sortWith displayableApp1.packageInfo.packageName.compareTo(
+      displayableApp2.packageInfo.packageName
+    )
   }
   return displayableApps
 }

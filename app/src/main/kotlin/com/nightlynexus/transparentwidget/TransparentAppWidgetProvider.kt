@@ -73,7 +73,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
               label
             )
           }
-          addListener(object: AnimatorListenerAdapter() {
+          addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
               appWidgetIdsToAnimators.remove(appWidgetId)
             }
