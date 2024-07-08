@@ -17,6 +17,7 @@
       tools:targetApi="34">
     <activity
         android:name=".InfoActivity"
+        android:excludeFromRecents="true"
         android:exported="true"
         android:theme="@android:style/Theme.NoDisplay">
       <intent-filter>
@@ -24,6 +25,7 @@
         <category android:name="android.intent.category.INFO" />
       </intent-filter>
     </activity>
+
     <activity
         android:name=".ConfigurationActivity"
         android:exported="false">
