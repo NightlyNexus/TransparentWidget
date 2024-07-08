@@ -74,6 +74,11 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             )
           }
           addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationCancel(animation: Animator) {
+              // Do not call onAnimationEnd after canceling the old Animator.
+              removeListener(this)
+            }
+
             override fun onAnimationEnd(animation: Animator) {
               appWidgetIdsToAnimators.remove(appWidgetId)
             }
