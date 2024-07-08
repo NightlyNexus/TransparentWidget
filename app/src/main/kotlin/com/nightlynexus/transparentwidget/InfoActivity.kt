@@ -13,6 +13,9 @@ import androidx.appcompat.app.AppCompatActivity
 class InfoActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+
     val appWidgetManager = AppWidgetManager.getInstance(this)
     val callbackIntent = Intent(this, WidgetPinnedReceiver::class.java)
     val successCallback = PendingIntent.getBroadcast(
@@ -33,6 +36,7 @@ class InfoActivity : AppCompatActivity() {
     if (!supported) {
       Toast.makeText(this, R.string.pin_widget_not_supported, Toast.LENGTH_SHORT).show()
     }
+
     finish()
   }
 }
