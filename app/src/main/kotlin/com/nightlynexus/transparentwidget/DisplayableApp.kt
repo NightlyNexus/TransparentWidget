@@ -79,46 +79,60 @@ internal class DisplayableApp(
   for (packageInfo in installedPackages) {
     val appLabel = packageInfo.applicationInfo.loadLabel(this).toString()
     val launchIntent = getLaunchIntentForPackage(packageInfo.packageName)
-    val packageActivities = packageInfo.activities
+    var packageActivities = packageInfo.activities
     if (packageActivities == null) {
-      check(launchIntent == null)
+      if (launchIntent == null) {
+        continue
+      }
+      // The launch Intent is not null, but Android gave use no Activities.
+      // This seems to be able to happen on some Samsung devices.
+      packageActivities = arrayOf(
+        launchIntent.resolveActivityInfo(this, PackageManager.GET_META_DATA)
+      )
     } else {
       check(packageActivities.isNotEmpty())
-      val firstLetter = if (appLabel.isEmpty()) {
-        ""
-      } else {
-        appLabel.substring(
-          0,
-          appLabel.offsetByCodePoints(0, 1)
-        ).run {
-          if (launchIntent == null) {
-            lowercase(locale)
-          } else {
-            uppercase(locale)
-          }
+    }
+    val firstLetter = if (appLabel.isEmpty()) {
+      ""
+    } else {
+      appLabel.substring(
+        0,
+        appLabel.offsetByCodePoints(0, 1)
+      ).run {
+        if (launchIntent == null) {
+          lowercase(locale)
+        } else {
+          uppercase(locale)
         }
       }
-      val activities = ArrayList<DisplayableApp.DisplayableActivity>()
-      for (packageActivity in packageActivities) {
-        if (packageActivity.exported) {
-          activities += DisplayableApp.DisplayableActivity(
-            packageActivity,
-            firstLetter
-          )
-        }
-      }
-      if (activities.isEmpty()) {
-        check(launchIntent == null)
-      } else {
-        displayableApps += DisplayableApp(
-          packageInfo,
-          appLabel,
-          firstLetter,
-          launchIntent,
-          activities
+    }
+    val activities = ArrayList<DisplayableApp.DisplayableActivity>()
+    for (packageActivity in packageActivities) {
+      if (packageActivity.exported) {
+        activities += DisplayableApp.DisplayableActivity(
+          packageActivity,
+          firstLetter
         )
       }
     }
+    if (activities.isEmpty()) {
+      if (launchIntent == null) {
+        continue
+      }
+      // The launch Intent is not null, but Android only gave us non-exported Activities.
+      // This seems to be able to happen on some Sony devices.
+      activities += DisplayableApp.DisplayableActivity(
+        launchIntent.resolveActivityInfo(this, PackageManager.GET_META_DATA),
+        firstLetter
+      )
+    }
+    displayableApps += DisplayableApp(
+      packageInfo,
+      appLabel,
+      firstLetter,
+      launchIntent,
+      activities
+    )
   }
   val collator = Collator.getInstance(ULocale.getDefault()).apply {
     strength = Collator.PRIMARY
