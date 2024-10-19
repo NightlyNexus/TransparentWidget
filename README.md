@@ -5,7 +5,7 @@ A transparent home screen widget that can optionally launch an app when clicked.
 
 Add resizable home screen widgets that do not obscure your wallpaper but can launch apps. This can be useful when your wallpaper itself implies clickable regions or you already know where to click but do not want to cover your wallpaper with app icons.
 
-<a href='https://play.google.com/store/apps/details?id=com.nightlynexus.transparentwidget'><img alt='Get Demo Mode Settings on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height="100"/></a>
+<a href='https://play.google.com/store/apps/details?id=com.nightlynexus.transparentwidget'><img alt='Get Transparent Widget on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height="100"/></a>
 <br><img alt='Screenshot' src='/screenshot.png' width="350"/>
 
 
