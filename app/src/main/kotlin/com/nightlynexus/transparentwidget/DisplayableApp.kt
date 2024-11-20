@@ -66,7 +66,7 @@ internal class DisplayableApp(
   @WorkerThread fun loadIcon(
     packageManager: PackageManager
   ): Drawable {
-    val loadedIcon = packageInfo.applicationInfo.loadIcon(packageManager)
+    val loadedIcon = packageInfo.applicationInfo!!.loadIcon(packageManager)
     icon = loadedIcon
     return loadedIcon
   }
@@ -77,7 +77,7 @@ internal class DisplayableApp(
   val locale = Locale.getDefault()
   val displayableApps = ArrayList<DisplayableApp>()
   for (packageInfo in installedPackages) {
-    val appLabel = packageInfo.applicationInfo.loadLabel(this).toString()
+    val appLabel = packageInfo.applicationInfo!!.loadLabel(this).toString()
     val launchIntent = getLaunchIntentForPackage(packageInfo.packageName)
     var packageActivities = packageInfo.activities
     if (packageActivities == null) {
