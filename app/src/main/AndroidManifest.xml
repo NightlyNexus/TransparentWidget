@@ -14,7 +14,7 @@
       android:label="@string/app_name"
       android:supportsRtl="true"
       android:theme="@style/Theme.TransparentWidgetApp"
-      tools:targetApi="34">
+      tools:targetApi="33">
     <activity
         android:name=".InfoActivity"
         android:excludeFromRecents="true"
