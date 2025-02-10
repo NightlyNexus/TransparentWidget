@@ -31,6 +31,7 @@ class ConfigurationActivity : AppCompatActivity() {
           appWidgetIdsToComponentsStorage.setComponent(appWidgetId, componentName)
           TransparentAppWidgetProvider.updateAndFade(
             this@ConfigurationActivity,
+            appWidgetIdsToComponentsStorage,
             AppWidgetManager.getInstance(this@ConfigurationActivity),
             appWidgetId,
             componentName

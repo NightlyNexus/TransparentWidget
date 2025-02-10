@@ -9,6 +9,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
@@ -28,6 +29,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
 
     fun updateAndFade(
       context: Context,
+      storage: AppWidgetIdsToComponentsStorage,
       appWidgetManager: AppWidgetManager,
       appWidgetId: Int,
       componentName: ComponentName?
@@ -38,9 +40,22 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         val packageManager = context.packageManager
         val handler = Handler(Looper.getMainLooper())
         executor.execute {
-          val activityInfo = packageManager.getActivityInfo(componentName)
-          val icon = activityInfo.loadIcon(packageManager).toBitmap()
-          val label = activityInfo.loadLabel(packageManager).toString()
+          val activityInfo = try {
+            packageManager.getActivityInfo(componentName)
+          } catch (e: PackageManager.NameNotFoundException) {
+            // The app is not installed anymore.
+            storage.setComponent(appWidgetId, null)
+            null
+          }
+          val icon: Bitmap?
+          val label: String?
+          if (activityInfo == null) {
+            icon = null
+            label = null
+          } else {
+            icon = activityInfo.loadIcon(packageManager).toBitmap()
+            label = activityInfo.loadLabel(packageManager).toString()
+          }
           handler.post {
             updateAndFade(context, appWidgetManager, appWidgetId, componentName, icon, label)
           }
@@ -91,6 +106,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
 
     private fun update(
       context: Context,
+      storage: AppWidgetIdsToComponentsStorage,
       appWidgetManager: AppWidgetManager,
       appWidgetId: Int,
       componentName: ComponentName?
@@ -102,9 +118,22 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         val packageManager = context.packageManager
         val handler = Handler(Looper.getMainLooper())
         executor.execute {
-          val activityInfo = packageManager.getActivityInfo(componentName)
-          val icon = activityInfo.loadIcon(packageManager).toBitmap()
-          val label = activityInfo.loadLabel(packageManager).toString()
+          val activityInfo = try {
+            packageManager.getActivityInfo(componentName)
+          } catch (e: PackageManager.NameNotFoundException) {
+            // The app is not installed anymore.
+            storage.setComponent(appWidgetId, null)
+            null
+          }
+          val icon: Bitmap?
+          val label: String?
+          if (activityInfo == null) {
+            icon = null
+            label = null
+          } else {
+            icon = activityInfo.loadIcon(packageManager).toBitmap()
+            label = activityInfo.loadLabel(packageManager).toString()
+          }
           handler.post {
             update(
               context,
@@ -172,6 +201,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       // Don't fade on the system-broadcasted update.
       update(
         context,
+        appWidgetIdsToComponentsStorage,
         appWidgetManager,
         appWidgetId,
         appWidgetIdsToComponentsStorage.getComponentName(appWidgetId)
@@ -189,6 +219,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       (context.applicationContext as TransparentWidgetApp).appWidgetIdsToComponentsStorage
     updateAndFade(
       context,
+      appWidgetIdsToComponentsStorage,
       appWidgetManager,
       appWidgetId,
       appWidgetIdsToComponentsStorage.getComponentName(appWidgetId)
