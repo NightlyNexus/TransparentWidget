@@ -19,7 +19,13 @@ class ConfigurationActivity : AppCompatActivity() {
       AppWidgetManager.EXTRA_APPWIDGET_ID,
       AppWidgetManager.INVALID_APPWIDGET_ID
     )
-    check(appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID)
+    if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+      // This happens in production on some Chinese devices.
+      // When does this happen? How do we get the appWidgetId? What behavior does this now have?
+      // Hopefully, these devices try launching the configuration activity again.
+      finish()
+      return
+    }
     val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
     setResult(RESULT_CANCELED, resultValue)
 
