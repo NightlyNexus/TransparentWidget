@@ -209,18 +209,24 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       // Decrease the index by 1 for the no component view at the top.
       val displayableApp = appsAndActivities[position - 1] as DisplayableApp
       holder.labelView.text = displayableApp.label
-      holder.setImageRunnable?.canceled = true
+      val previousSetImageRunnable = holder.setImageRunnable
+      if (previousSetImageRunnable != null) {
+        previousSetImageRunnable.resetDisplayableApp = displayableApp
+      }
       if (displayableApp.icon == null) {
         holder.iconView.setImageDrawable(null)
         holder.iconView.contentDescription = null
-        val setImageRunnable = SetImageRunnable(
-          displayableApp,
-          packageManager,
-          handler,
-          holder.iconView
-        )
-        holder.setImageRunnable = setImageRunnable
-        executor.execute(setImageRunnable)
+        if (previousSetImageRunnable == null
+          || previousSetImageRunnable.displayableApp != displayableApp) {
+          val setImageRunnable = SetImageRunnable(
+            displayableApp,
+            packageManager,
+            handler,
+            holder.iconView
+          )
+          holder.setImageRunnable = setImageRunnable
+          executor.execute(setImageRunnable)
+        }
       } else {
         holder.iconView.setImageDrawable(displayableApp.icon)
         holder.iconView.contentDescription = context.getString(
@@ -287,20 +293,26 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       val displayableActivity =
         appsAndActivities[position - 1] as DisplayableApp.DisplayableActivity
       holder.nameView.text = displayableActivity.activityInfo.name
-      holder.setImageAndLabelRunnable?.canceled = true
+      val previousSetImageAndLabelRunnable = holder.setImageAndLabelRunnable
+      if (previousSetImageAndLabelRunnable != null) {
+        previousSetImageAndLabelRunnable.resetDisplayableActivity = displayableActivity
+      }
       if (displayableActivity.icon == null) {
         holder.iconView.setImageDrawable(null)
         holder.iconView.contentDescription = null
         holder.labelView.text = null
-        val setLabelAndImageRunnable = SetImageAndLabelRunnable(
-          displayableActivity,
-          packageManager,
-          handler,
-          holder.iconView,
-          holder.labelView
-        )
-        holder.setImageAndLabelRunnable = setLabelAndImageRunnable
-        executor.execute(setLabelAndImageRunnable)
+        if (previousSetImageAndLabelRunnable == null
+          || previousSetImageAndLabelRunnable.displayableActivity != displayableActivity) {
+          val newSetLabelAndImageRunnable = SetImageAndLabelRunnable(
+            displayableActivity,
+            packageManager,
+            handler,
+            holder.iconView,
+            holder.labelView
+          )
+          holder.setImageAndLabelRunnable = newSetLabelAndImageRunnable
+          executor.execute(newSetLabelAndImageRunnable)
+        }
       } else {
         holder.iconView.setImageDrawable(displayableActivity.icon)
         val label = displayableActivity.label
@@ -333,48 +345,50 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private inner class SetImageRunnable(
-      private val displayableApp: DisplayableApp,
+      val displayableApp: DisplayableApp,
       private val packageManager: PackageManager,
       private val handler: Handler,
       private val iconView: ImageView
     ) : Runnable {
-      var canceled = false
+      var resetDisplayableApp: DisplayableApp = displayableApp
 
       override fun run() {
         val icon = displayableApp.loadIcon(packageManager)
         handler.post {
-          if (!canceled) {
-            iconView.setImageDrawable(icon)
-            iconView.contentDescription = context.getString(
-              R.string.app_icon_content_description,
-              displayableApp.label
-            )
+          if (resetDisplayableApp != displayableApp) {
+            return@post
           }
+          iconView.setImageDrawable(icon)
+          iconView.contentDescription = context.getString(
+            R.string.app_icon_content_description,
+            displayableApp.label
+          )
         }
       }
     }
 
     private inner class SetImageAndLabelRunnable(
-      private val displayableActivity: DisplayableApp.DisplayableActivity,
+      val displayableActivity: DisplayableApp.DisplayableActivity,
       private val packageManager: PackageManager,
       private val handler: Handler,
       private val iconView: ImageView,
       private val labelView: TextView
     ) : Runnable {
-      var canceled = false
+      var resetDisplayableActivity: DisplayableApp.DisplayableActivity = displayableActivity
 
       override fun run() {
         val icon = displayableActivity.loadIcon(packageManager)
         val label = displayableActivity.loadLabel(packageManager)
         handler.post {
-          if (!canceled) {
-            iconView.setImageDrawable(icon)
-            iconView.contentDescription = context.getString(
-              R.string.activity_icon_content_description,
-              label
-            )
-            labelView.text = label
+          if (resetDisplayableActivity != displayableActivity) {
+            return@post
           }
+          iconView.setImageDrawable(icon)
+          iconView.contentDescription = context.getString(
+            R.string.activity_icon_content_description,
+            label
+          )
+          labelView.text = label
         }
       }
     }
