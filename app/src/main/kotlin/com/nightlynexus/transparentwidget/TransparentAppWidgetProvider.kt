@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -53,7 +54,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             icon = null
             label = null
           } else {
-            icon = activityInfo.loadIcon(packageManager).toBitmap()
+            icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
             label = activityInfo.loadLabel(packageManager).toString()
           }
           handler.post {
@@ -131,7 +132,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             icon = null
             label = null
           } else {
-            icon = activityInfo.loadIcon(packageManager).toBitmap()
+            icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
             label = activityInfo.loadLabel(packageManager).toString()
           }
           handler.post {
@@ -187,6 +188,16 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         )
       views.setOnClickPendingIntent(android.R.id.background, pendingIntent)
       appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    // A Motorola device in the wild seems to have a 0-sized Drawable icon.
+    private fun Drawable.toBitmapOrNullIfAndOnlyIfEmpty(): Bitmap? {
+      val intrinsicWidth = intrinsicWidth
+      val intrinsicHeight = intrinsicHeight
+      if (intrinsicWidth == 0 || intrinsicHeight == 0) {
+        return null
+      }
+      return toBitmap(intrinsicWidth, intrinsicHeight)
     }
   }
 
