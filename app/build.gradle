@@ -78,6 +78,7 @@ dependencies {
   implementation deps.androidx.lifecycleRuntime
   implementation deps.androidx.lifecycleViewmodel
   implementation deps.androidx.preference
+  implementation deps.androidx.recyclerview
   implementation deps.androidx.savedstate
   implementation deps.kotlin.stdlibJdk8
 
