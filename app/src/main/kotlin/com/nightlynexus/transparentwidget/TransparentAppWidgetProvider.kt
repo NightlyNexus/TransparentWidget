@@ -36,10 +36,16 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       componentName: ComponentName?
     ) {
       if (componentName == null) {
-        updateAndFade(context, appWidgetManager, appWidgetId, null, null, null)
+        updateAndFade(
+          context,
+          appWidgetManager,
+          appWidgetId,
+          componentName = null,
+          icon = null,
+          label = null
+        )
       } else {
         val packageManager = context.packageManager
-        val handler = Handler(Looper.getMainLooper())
         executor.execute {
           val activityInfo = try {
             packageManager.getActivityInfo(componentName)
@@ -57,13 +63,24 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
             label = activityInfo.loadLabel(packageManager).toString()
           }
+          val handler = Handler(Looper.getMainLooper())
           handler.post {
-            updateAndFade(context, appWidgetManager, appWidgetId, componentName, icon, label)
+            updateAndFade(
+              context,
+              appWidgetManager,
+              appWidgetId,
+              componentName,
+              icon,
+              label
+            )
           }
         }
       }
     }
 
+    /**
+     * You must call this function on a Looper thread because this function uses ValueAnimator.
+     */
     private fun updateAndFade(
       context: Context,
       appWidgetManager: AppWidgetManager,
@@ -114,10 +131,18 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
     ) {
       val backgroundColorEnd = context.getColor(R.color.widget_background_end)
       if (componentName == null) {
-        update(context, appWidgetManager, appWidgetId, backgroundColorEnd, 0, null, null, null)
+        update(
+          context,
+          appWidgetManager,
+          appWidgetId,
+          backgroundColorEnd,
+          alpha = 0,
+          componentName = null,
+          icon = null,
+          label = null
+        )
       } else {
         val packageManager = context.packageManager
-        val handler = Handler(Looper.getMainLooper())
         executor.execute {
           val activityInfo = try {
             packageManager.getActivityInfo(componentName)
@@ -135,18 +160,16 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
             label = activityInfo.loadLabel(packageManager).toString()
           }
-          handler.post {
-            update(
-              context,
-              appWidgetManager,
-              appWidgetId,
-              backgroundColorEnd,
-              0,
-              componentName,
-              icon,
-              label
-            )
-          }
+          update(
+            context,
+            appWidgetManager,
+            appWidgetId,
+            backgroundColorEnd,
+            0,
+            componentName,
+            icon,
+            label
+          )
         }
       }
     }
