@@ -20,6 +20,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.IntRange
 import androidx.core.graphics.drawable.toBitmap
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 internal val executor = Executors.newCachedThreadPool()
 private val appWidgetIdsToAnimators = mutableMapOf<Int, ValueAnimator>()
@@ -124,58 +125,6 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
 
     private fun update(
       context: Context,
-      storage: AppWidgetIdsToComponentsStorage,
-      appWidgetManager: AppWidgetManager,
-      appWidgetId: Int,
-      componentName: ComponentName?
-    ) {
-      val backgroundColorEnd = context.getColor(R.color.widget_background_end)
-      if (componentName == null) {
-        update(
-          context,
-          appWidgetManager,
-          appWidgetId,
-          backgroundColorEnd,
-          alpha = 0,
-          componentName = null,
-          icon = null,
-          label = null
-        )
-      } else {
-        val packageManager = context.packageManager
-        executor.execute {
-          val activityInfo = try {
-            packageManager.getActivityInfo(componentName)
-          } catch (e: PackageManager.NameNotFoundException) {
-            // The app is not installed anymore.
-            storage.setComponent(appWidgetId, null)
-            null
-          }
-          val icon: Bitmap?
-          val label: String?
-          if (activityInfo == null) {
-            icon = null
-            label = null
-          } else {
-            icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
-            label = activityInfo.loadLabel(packageManager).toString()
-          }
-          update(
-            context,
-            appWidgetManager,
-            appWidgetId,
-            backgroundColorEnd,
-            0,
-            componentName,
-            icon,
-            label
-          )
-        }
-      }
-    }
-
-    private fun update(
-      context: Context,
       appWidgetManager: AppWidgetManager,
       appWidgetId: Int,
       @ColorInt backgroundColor: Int,
@@ -224,6 +173,67 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
     }
   }
 
+  // Update the individual appWidgetId from the system-broadcasted update.
+  private fun update(
+    context: Context,
+    storage: AppWidgetIdsToComponentsStorage,
+    appWidgetManager: AppWidgetManager,
+    appWidgetId: Int,
+    componentName: ComponentName?,
+    asyncPendingResult: PendingResult,
+    pendingCount: AtomicInteger
+  ) {
+    val backgroundColorEnd = context.getColor(R.color.widget_background_end)
+    if (componentName == null) {
+      update(
+        context,
+        appWidgetManager,
+        appWidgetId,
+        backgroundColorEnd,
+        alpha = 0,
+        componentName = null,
+        icon = null,
+        label = null
+      )
+      if (pendingCount.decrementAndGet() == 0) {
+        asyncPendingResult.finish()
+      }
+    } else {
+      val packageManager = context.packageManager
+      executor.execute {
+        val activityInfo = try {
+          packageManager.getActivityInfo(componentName)
+        } catch (e: PackageManager.NameNotFoundException) {
+          // The app is not installed anymore.
+          storage.setComponent(appWidgetId, null)
+          null
+        }
+        val icon: Bitmap?
+        val label: String?
+        if (activityInfo == null) {
+          icon = null
+          label = null
+        } else {
+          icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
+          label = activityInfo.loadLabel(packageManager).toString()
+        }
+        update(
+          context,
+          appWidgetManager,
+          appWidgetId,
+          backgroundColorEnd,
+          0,
+          componentName,
+          icon,
+          label
+        )
+        if (pendingCount.decrementAndGet() == 0) {
+          asyncPendingResult.finish()
+        }
+      }
+    }
+  }
+
   override fun onUpdate(
     context: Context,
     appWidgetManager: AppWidgetManager,
@@ -231,6 +241,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
   ) {
     val appWidgetIdsToComponentsStorage =
       (context.applicationContext as TransparentWidgetApp).appWidgetIdsToComponentsStorage
+    val asyncPendingResult = goAsync()
+    val pendingCount = AtomicInteger(appWidgetIds.size)
     for (appWidgetId in appWidgetIds) {
       // Don't fade on the system-broadcasted update.
       update(
@@ -238,7 +250,9 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         appWidgetIdsToComponentsStorage,
         appWidgetManager,
         appWidgetId,
-        appWidgetIdsToComponentsStorage.getComponentName(appWidgetId)
+        appWidgetIdsToComponentsStorage.getComponentName(appWidgetId),
+        asyncPendingResult,
+        pendingCount
       )
     }
   }
