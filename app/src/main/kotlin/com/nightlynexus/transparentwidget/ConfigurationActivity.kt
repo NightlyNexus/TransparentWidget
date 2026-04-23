@@ -14,7 +14,12 @@ class ConfigurationActivity : AppCompatActivity() {
       (application as TransparentWidgetApp).appWidgetIdsToComponentsStorage
     super.onCreate(savedInstanceState)
 
-    val extras = intent.extras!!
+    val extras = intent.extras
+    if (extras == null) {
+      // This happened on a 2025 Moto G running SDK 36.
+      // There is nothing to do without the appwidget id from the intent extras, though.
+      return
+    }
     val appWidgetId = extras.getInt(
       AppWidgetManager.EXTRA_APPWIDGET_ID,
       AppWidgetManager.INVALID_APPWIDGET_ID
