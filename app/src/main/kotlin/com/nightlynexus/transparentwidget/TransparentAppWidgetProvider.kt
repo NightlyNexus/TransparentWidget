@@ -293,5 +293,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
   }
 
   override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+    val appWidgetIdsToComponentsStorage =
+      (context.applicationContext as TransparentWidgetApp).appWidgetIdsToComponentsStorage
+    appWidgetIdsToComponentsStorage.restore(oldWidgetIds, newWidgetIds)
   }
 }
