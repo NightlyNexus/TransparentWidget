@@ -7,12 +7,11 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.widget.Toast
 
 class InfoActivity : Activity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+  override fun onResume() {
+    super.onResume()
 
     startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
 
