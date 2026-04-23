@@ -239,6 +239,9 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
     appWidgetManager: AppWidgetManager,
     appWidgetIds: IntArray
   ) {
+    if (appWidgetIds.isEmpty()) {
+      return
+    }
     val appWidgetIdsToComponentsStorage =
       (context.applicationContext as TransparentWidgetApp).appWidgetIdsToComponentsStorage
     val asyncPendingResult = goAsync()
