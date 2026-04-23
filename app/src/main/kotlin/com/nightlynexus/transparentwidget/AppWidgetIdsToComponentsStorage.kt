@@ -19,8 +19,7 @@ internal class AppWidgetIdsToComponentsStorage(private val sharedPreferences: Sh
   }
 
   fun getComponentName(appWidgetId: Int): ComponentName? {
-    val key = appWidgetId.toString()
-    val value = sharedPreferences.getString(key, null) ?: return null
+    val value = sharedPreferences.getString(appWidgetId.toString(), null) ?: return null
     val index = value.indexOf('\n')
     if (index == -1) {
       // The user manually edited his SharedPreferences file contents.
