@@ -73,3 +73,11 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
     )
   }
 }
+
+class FallbackInfoActivity : Activity() {
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    if (hasFocus) {
+      promptAddWidgetAndFinish(useFallback = false)
+    }
+  }
+}
