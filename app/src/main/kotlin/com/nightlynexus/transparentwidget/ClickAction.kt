@@ -23,9 +23,8 @@ internal sealed class ClickAction private constructor(private val ordinal: Int) 
 
   companion object {
     fun ComponentName.toClickAction(): ClickAction {
-      val intent = Intent().apply {
-        component = this@toClickAction
-      }
+      val intent = Intent()
+      intent.component = this
       return Activity(intent)
     }
 
