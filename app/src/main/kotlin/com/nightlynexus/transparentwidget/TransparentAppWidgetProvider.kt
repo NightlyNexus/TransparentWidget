@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -141,19 +142,9 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       val views = RemoteViews(context.packageName, R.layout.transparent_app_widget)
       views.setInt(android.R.id.background, "setBackgroundColor", backgroundColor)
       views.setInt(R.id.widget_icon, "setAlpha", alpha)
-      views.setImageViewBitmap(R.id.widget_icon, icon)
-      if (label == null) {
-        views.setContentDescription(
-          R.id.widget_icon,
-          null
-        )
-      } else {
-        views.setContentDescription(
-          R.id.widget_icon,
-          context.getString(R.string.activity_icon_content_description, label)
-        )
-      }
       val pendingIntent = if (clickAction is ClickAction.HasIntent) {
+        views.setIcon(context, icon, label)
+
         val requestCode = 0
         val intent = clickAction.intent
         val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -188,24 +179,60 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       } else {
         when (clickAction) {
           ClickAction.DoNothing -> {
+            views.setIcon(context, icon, label)
             null
           }
 
-          ClickAction.Malformed -> {
-            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
-            //  click action. Maybe show a persistent error icon until you rebind the widget?
-            null
-          }
+          ClickAction.Malformed, ClickAction.Uninstalled -> {
+            views.setNeedsRebindIcon(context)
 
-          ClickAction.Uninstalled -> {
-            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
-            //  click action. Maybe show a persistent error icon until you rebind the widget?
-            null
+            val requestCode = 0
+            val intent = Intent(context, ConfigurationActivity::class.java)
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.getActivity(
+              context,
+              requestCode,
+              intent,
+              pendingIntentFlags
+            )
           }
         }
       }
       views.setOnClickPendingIntent(android.R.id.background, pendingIntent)
       appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    private fun RemoteViews.setIcon(
+      context: Context,
+      icon: Bitmap?,
+      label: String?
+    ) {
+      setImageViewBitmap(
+        R.id.widget_icon,
+        icon
+      )
+      setContentDescription(
+        R.id.widget_icon,
+        if (label == null) {
+          null
+        } else {
+          context.getString(R.string.activity_icon_content_description, label)
+        }
+      )
+    }
+
+    private fun RemoteViews.setNeedsRebindIcon(
+      context: Context
+    ) {
+      setImageViewResource(
+        R.id.widget_icon,
+        R.drawable.needs_rebind_icon
+      )
+      setContentDescription(
+        R.id.widget_icon,
+        context.getText(R.string.needs_rebind_icon_content_description)
+      )
     }
 
     // A Motorola device in the wild seems to have a 0-sized Drawable icon.

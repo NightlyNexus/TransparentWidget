@@ -5,4 +5,5 @@
   <color name="widget_background_start">#77000000</color>
   <color name="widget_background_end">#00000000</color>
   <color name="window_splash_screen_animated_icon">#00000000</color>
+  <color name="needs_rebind_icon">#FFFFFF</color>
 </resources>
