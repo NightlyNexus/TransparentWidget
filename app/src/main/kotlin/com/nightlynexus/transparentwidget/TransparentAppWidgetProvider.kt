@@ -147,7 +147,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
 
         val requestCode = 0
         val intent = clickAction.intent
-        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+          PendingIntent.FLAG_IMMUTABLE
         when (clickAction) {
           is ClickAction.Activity -> {
             PendingIntent.getActivity(
@@ -177,9 +178,11 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           }
         }
       } else {
+        check(icon == null)
+        check(label == null)
         when (clickAction) {
           ClickAction.DoNothing -> {
-            views.setIcon(context, icon, label)
+            views.setNoIcon()
             null
           }
 
@@ -189,7 +192,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             val requestCode = 0
             val intent = Intent(context, ConfigurationActivity::class.java)
             intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+              PendingIntent.FLAG_IMMUTABLE
             PendingIntent.getActivity(
               context,
               requestCode,
@@ -219,6 +223,17 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         } else {
           context.getString(R.string.activity_icon_content_description, label)
         }
+      )
+    }
+
+    private fun RemoteViews.setNoIcon() {
+      setImageViewBitmap(
+        R.id.widget_icon,
+        null
+      )
+      setContentDescription(
+        R.id.widget_icon,
+        null
       )
     }
 
