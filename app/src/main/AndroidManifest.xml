@@ -27,6 +27,13 @@
     </activity>
 
     <activity
+        android:name=".FallbackInfoActivity"
+        android:excludeFromRecents="true"
+        android:exported="false"
+        android:theme="@style/Theme.AlmostNoDisplay">
+    </activity>
+
+    <activity
         android:name=".ConfigurationActivity"
         android:exported="false">
       <intent-filter>
