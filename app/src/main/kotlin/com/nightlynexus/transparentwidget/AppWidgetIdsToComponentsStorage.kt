@@ -1,13 +1,15 @@
 package com.nightlynexus.transparentwidget
 
-import android.content.ComponentName
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.nightlynexus.transparentwidget.ClickAction.Companion.decodeClickAction
 
-internal class AppWidgetIdsToComponentsStorage(private val sharedPreferences: SharedPreferences) {
-  fun setComponent(appWidgetId: Int, componentName: ComponentName?) {
+internal class AppWidgetIdsToComponentsStorage(
+  private val sharedPreferences: SharedPreferences
+) {
+  fun setClickAction(appWidgetId: Int, clickAction: ClickAction) {
     val key = encodeKey(appWidgetId)
-    val value = encodeValue(componentName)
+    val value = clickAction.encode()
     sharedPreferences.edit { putString(key, value) }
   }
 
@@ -16,10 +18,11 @@ internal class AppWidgetIdsToComponentsStorage(private val sharedPreferences: Sh
     sharedPreferences.edit { remove(key) }
   }
 
-  fun getComponentName(appWidgetId: Int): ComponentName? {
+  fun getClickAction(appWidgetId: Int): ClickAction {
     val key = encodeKey(appWidgetId)
-    val value = sharedPreferences.getString(key, null) ?: return null
-    return decodeValue(value)
+    val value = sharedPreferences.getString(key, null)
+    val clickAction = decodeClickAction(value)
+    return clickAction
   }
 
   fun restore(oldAppWidgetIds: IntArray, newAppWidgetIds: IntArray) {
@@ -45,25 +48,5 @@ internal class AppWidgetIdsToComponentsStorage(private val sharedPreferences: Sh
 
   private fun encodeKey(appWidgetId: Int): String {
     return appWidgetId.toString()
-  }
-
-  private fun encodeValue(componentName: ComponentName?): String? {
-    return if (componentName == null) {
-      null
-    } else {
-      "${componentName.packageName}\n${componentName.className}"
-    }
-  }
-
-  private fun decodeValue(value: String): ComponentName? {
-    val index = value.indexOf('\n')
-    if (index == -1) {
-      // The user manually edited his SharedPreferences file contents.
-      // Make the widget blank as though it has no ComponentName.
-      return null
-    }
-    val packageName = value.substring(0, index)
-    val className = value.substring(index + 1)
-    return ComponentName(packageName, className)
   }
 }

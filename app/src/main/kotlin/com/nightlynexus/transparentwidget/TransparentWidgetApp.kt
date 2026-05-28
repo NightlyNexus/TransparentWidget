@@ -7,11 +7,13 @@ internal class TransparentWidgetApp : Application() {
 
   override fun onCreate() {
     super.onCreate()
-    appWidgetIdsToComponentsStorage = AppWidgetIdsToComponentsStorage(
-      getSharedPreferences(
-        "app_widget_ids_to_components",
-        MODE_PRIVATE
-      )
+    val sharedPreferences = getSharedPreferences(
+      "app_widget_ids_to_components",
+      MODE_PRIVATE
     )
+    appWidgetIdsToComponentsStorage = AppWidgetIdsToComponentsStorage(sharedPreferences)
+
+    val migrator = AppWidgetIdsToComponentsStorageMigrator(sharedPreferences)
+    migrator.migrateIfNeeded()
   }
 }
