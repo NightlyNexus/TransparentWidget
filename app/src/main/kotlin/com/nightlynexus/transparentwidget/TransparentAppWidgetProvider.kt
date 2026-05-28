@@ -52,6 +52,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             packageManager.getActivityInfo(componentName)
           } catch (e: PackageManager.NameNotFoundException) {
             // The app is not installed anymore.
+            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
+            //  click action. Maybe show a persistent error icon until you rebind the widget?
             storage.setComponent(appWidgetId, null)
             null
           }
@@ -205,6 +207,8 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           packageManager.getActivityInfo(componentName)
         } catch (e: PackageManager.NameNotFoundException) {
           // The app is not installed anymore.
+          // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
+          //  click action. Maybe show a persistent error icon until you rebind the widget?
           storage.setComponent(appWidgetId, null)
           null
         }
