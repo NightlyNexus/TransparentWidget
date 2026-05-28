@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.nightlynexus.transparentwidget.ClickAction.Companion.toClickAction
 import kotlin.concurrent.Volatile
 import me.zhanghai.android.fastscroll.DefaultAnimationHelper
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
@@ -23,11 +24,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   private val packageManager = context.packageManager
   private val adapter = Adapter()
   private lateinit var handler: Handler
-  private lateinit var onComponentNameClickedListener: OnComponentNameClickedListener
+  private lateinit var onClickedActionSelectedListener: OnClickedActionSelectedListener
   @Volatile private var attached = false
 
-  interface OnComponentNameClickedListener {
-    fun onComponentNameClicked(componentName: ComponentName?)
+  interface OnClickedActionSelectedListener {
+    fun onClickActionSelected(clickAction: ClickAction)
   }
 
   init {
@@ -40,8 +41,8 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
   }
 
-  fun setOnComponentNameClickedListener(listener: OnComponentNameClickedListener) {
-    onComponentNameClickedListener = listener
+  fun setOnComponentNameClickedListener(listener: OnClickedActionSelectedListener) {
+    onClickedActionSelectedListener = listener
   }
 
   override fun onAttachedToWindow() {
@@ -153,7 +154,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       return when (viewType) {
         R.layout.no_component_list_item -> {
           root.setOnClickListener {
-            onComponentNameClickedListener.onComponentNameClicked(null)
+            onClickedActionSelectedListener.onClickActionSelected(ClickAction.DoNothing)
           }
           NoComponentViewHolder(root)
         }
@@ -282,7 +283,9 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         holder.expandCollapseView.visibility = VISIBLE
         holder.itemView.setOnClickListener {
           val componentName = displayableApp.launchIntent.component!!
-          onComponentNameClickedListener.onComponentNameClicked(componentName)
+          onClickedActionSelectedListener.onClickActionSelected(
+            componentName.toClickAction()
+          )
         }
       }
       displayableApp.preloadActivities()
@@ -323,11 +326,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         holder.labelView.text = label
       }
       holder.itemView.setOnClickListener {
-        onComponentNameClickedListener.onComponentNameClicked(
+        onClickedActionSelectedListener.onClickActionSelected(
           ComponentName(
             displayableActivity.activityInfo.packageName,
             displayableActivity.activityInfo.name
-          )
+          ).toClickAction()
         )
       }
     }

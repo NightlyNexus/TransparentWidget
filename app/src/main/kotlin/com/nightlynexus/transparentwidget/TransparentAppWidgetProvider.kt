@@ -6,9 +6,7 @@ import android.animation.ValueAnimator
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -34,49 +32,54 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       storage: AppWidgetIdsToComponentsStorage,
       appWidgetManager: AppWidgetManager,
       appWidgetId: Int,
-      componentName: ComponentName?
+      clickAction: ClickAction
     ) {
-      if (componentName == null) {
+      if (clickAction !is ClickAction.HasIntent) {
         updateAndFade(
           context,
           appWidgetManager,
           appWidgetId,
-          componentName = null,
+          clickAction,
           icon = null,
           label = null
         )
-      } else {
-        val packageManager = context.packageManager
-        executor.execute {
-          val activityInfo = try {
+        return
+      }
+      val packageManager = context.packageManager
+      executor.execute {
+        var resultingClickAction = clickAction
+        val componentName = clickAction.intent.component
+        val activityInfo = if (componentName == null) {
+          null
+        } else {
+          try {
             packageManager.getActivityInfo(componentName)
           } catch (e: PackageManager.NameNotFoundException) {
             // The app is not installed anymore.
-            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
-            //  click action. Maybe show a persistent error icon until you rebind the widget?
-            storage.setComponent(appWidgetId, null)
+            resultingClickAction = ClickAction.Uninstalled
+            storage.setClickAction(appWidgetId, ClickAction.Uninstalled)
             null
           }
-          val icon: Bitmap?
-          val label: String?
-          if (activityInfo == null) {
-            icon = null
-            label = null
-          } else {
-            icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
-            label = activityInfo.loadLabel(packageManager).toString()
-          }
-          val handler = Handler(Looper.getMainLooper())
-          handler.post {
-            updateAndFade(
-              context,
-              appWidgetManager,
-              appWidgetId,
-              componentName,
-              icon,
-              label
-            )
-          }
+        }
+        val icon: Bitmap?
+        val label: String?
+        if (activityInfo == null) {
+          icon = null
+          label = null
+        } else {
+          icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
+          label = activityInfo.loadLabel(packageManager).toString()
+        }
+        val handler = Handler(Looper.getMainLooper())
+        handler.post {
+          updateAndFade(
+            context,
+            appWidgetManager,
+            appWidgetId,
+            resultingClickAction,
+            icon,
+            label
+          )
         }
       }
     }
@@ -88,7 +91,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       context: Context,
       appWidgetManager: AppWidgetManager,
       appWidgetId: Int,
-      componentName: ComponentName?,
+      clickAction: ClickAction,
       icon: Bitmap?,
       label: String?
     ) {
@@ -104,7 +107,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
               appWidgetId,
               animation.animatedValue as Int,
               ((1 - animation.animatedFraction) * 255).toInt(),
-              componentName,
+              clickAction,
               icon,
               label
             )
@@ -131,16 +134,13 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       appWidgetId: Int,
       @ColorInt backgroundColor: Int,
       @IntRange(0, 255) alpha: Int,
-      componentName: ComponentName?,
+      clickAction: ClickAction,
       icon: Bitmap?,
       label: String?
     ) {
       val views = RemoteViews(context.packageName, R.layout.transparent_app_widget)
       views.setInt(android.R.id.background, "setBackgroundColor", backgroundColor)
       views.setInt(R.id.widget_icon, "setAlpha", alpha)
-      val intent = Intent().apply {
-        component = componentName
-      }
       views.setImageViewBitmap(R.id.widget_icon, icon)
       if (label == null) {
         views.setContentDescription(
@@ -153,13 +153,57 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           context.getString(R.string.activity_icon_content_description, label)
         )
       }
-      val pendingIntent =
-        PendingIntent.getActivity(
-          context,
-          0,
-          intent,
-          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+      val pendingIntent = if (clickAction is ClickAction.HasIntent) {
+        val requestCode = 0
+        val intent = clickAction.intent
+        val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        when (clickAction) {
+          is ClickAction.Activity -> {
+            PendingIntent.getActivity(
+              context,
+              requestCode,
+              intent,
+              pendingIntentFlags
+            )
+          }
+
+          is ClickAction.Service -> {
+            PendingIntent.getService(
+              context,
+              requestCode,
+              intent,
+              pendingIntentFlags
+            )
+          }
+
+          is ClickAction.Broadcast -> {
+            PendingIntent.getBroadcast(
+              context,
+              requestCode,
+              intent,
+              pendingIntentFlags
+            )
+          }
+        }
+      } else {
+        when (clickAction) {
+          ClickAction.DoNothing -> {
+            null
+          }
+
+          ClickAction.Malformed -> {
+            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
+            //  click action. Maybe show a persistent error icon until you rebind the widget?
+            null
+          }
+
+          ClickAction.Uninstalled -> {
+            // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
+            //  click action. Maybe show a persistent error icon until you rebind the widget?
+            null
+          }
+        }
+      }
       views.setOnClickPendingIntent(android.R.id.background, pendingIntent)
       appWidgetManager.updateAppWidget(appWidgetId, views)
     }
@@ -181,59 +225,64 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
     storage: AppWidgetIdsToComponentsStorage,
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int,
-    componentName: ComponentName?,
+    clickAction: ClickAction,
     asyncPendingResult: PendingResult,
     pendingCount: AtomicInteger
   ) {
     val backgroundColorEnd = context.getColor(R.color.widget_background_end)
-    if (componentName == null) {
+    if (clickAction !is ClickAction.HasIntent) {
       update(
         context,
         appWidgetManager,
         appWidgetId,
         backgroundColorEnd,
         alpha = 0,
-        componentName = null,
+        clickAction,
         icon = null,
         label = null
       )
       if (pendingCount.decrementAndGet() == 0) {
         asyncPendingResult.finish()
       }
-    } else {
-      val packageManager = context.packageManager
-      executor.execute {
-        val activityInfo = try {
+      return
+    }
+    val packageManager = context.packageManager
+    executor.execute {
+      var resultingClickAction = clickAction
+      val componentName = clickAction.intent.component
+      val activityInfo = if (componentName == null) {
+        null
+      } else {
+        try {
           packageManager.getActivityInfo(componentName)
         } catch (e: PackageManager.NameNotFoundException) {
           // The app is not installed anymore.
-          // TODO: Make this instead open the ConfigurationActivity to rebind the widget to a new
-          //  click action. Maybe show a persistent error icon until you rebind the widget?
-          storage.setComponent(appWidgetId, null)
+          resultingClickAction = ClickAction.Uninstalled
+          storage.setClickAction(appWidgetId, ClickAction.Uninstalled)
           null
         }
-        val icon: Bitmap?
-        val label: String?
-        if (activityInfo == null) {
-          icon = null
-          label = null
-        } else {
-          icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
-          label = activityInfo.loadLabel(packageManager).toString()
-        }
-        update(
-          context,
-          appWidgetManager,
-          appWidgetId,
-          backgroundColorEnd,
-          0,
-          componentName,
-          icon,
-          label
-        )
-        if (pendingCount.decrementAndGet() == 0) {
-          asyncPendingResult.finish()
-        }
+      }
+      val icon: Bitmap?
+      val label: String?
+      if (activityInfo == null) {
+        icon = null
+        label = null
+      } else {
+        icon = activityInfo.loadIcon(packageManager).toBitmapOrNullIfAndOnlyIfEmpty()
+        label = activityInfo.loadLabel(packageManager).toString()
+      }
+      update(
+        context,
+        appWidgetManager,
+        appWidgetId,
+        backgroundColorEnd,
+        0,
+        resultingClickAction,
+        icon,
+        label
+      )
+      if (pendingCount.decrementAndGet() == 0) {
+        asyncPendingResult.finish()
       }
     }
   }
@@ -257,7 +306,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
         appWidgetIdsToComponentsStorage,
         appWidgetManager,
         appWidgetId,
-        appWidgetIdsToComponentsStorage.getComponentName(appWidgetId),
+        appWidgetIdsToComponentsStorage.getClickAction(appWidgetId),
         asyncPendingResult,
         pendingCount
       )
@@ -277,7 +326,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       appWidgetIdsToComponentsStorage,
       appWidgetManager,
       appWidgetId,
-      appWidgetIdsToComponentsStorage.getComponentName(appWidgetId)
+      appWidgetIdsToComponentsStorage.getClickAction(appWidgetId)
     )
   }
 
