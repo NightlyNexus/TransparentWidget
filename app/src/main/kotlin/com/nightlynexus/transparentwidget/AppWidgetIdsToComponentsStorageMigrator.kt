@@ -27,10 +27,10 @@ internal class AppWidgetIdsToComponentsStorageMigrator(
         } else {
           val componentName = decodeOldValue(oldValue)
           if (componentName == null) {
-            null
+            ClickAction.Malformed
           } else {
-            componentName.toClickAction().encode()
-          }
+            componentName.toClickAction()
+          }.encode()
         }
         putString(key, newValue)
       }
@@ -43,7 +43,6 @@ internal class AppWidgetIdsToComponentsStorageMigrator(
     val index = value.indexOf('\n')
     if (index == -1) {
       // The user manually edited his SharedPreferences file contents.
-      // Make the widget blank as though it has no ComponentName.
       return null
     }
     val packageName = value.substring(0, index)
