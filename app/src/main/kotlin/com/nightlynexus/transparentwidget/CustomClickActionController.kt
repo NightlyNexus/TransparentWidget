@@ -10,6 +10,14 @@ import android.widget.CompoundButton
 import android.widget.TextView
 import com.nightlynexus.transparentwidget.controller.Controller
 
+// TODO: Allow the user to enter Intent data instead of uri string:
+// - Action
+// - Category
+// - Data Uri
+// - MIME type
+// - Package and ComponentName
+// - Extras
+// - Flags
 internal class CustomClickActionController(
   appWidgetIdsToComponentsStorage: AppWidgetIdsToComponentsStorage,
   onCustomClickActionSelectedListener: OnCustomClickActionSelectedListener,

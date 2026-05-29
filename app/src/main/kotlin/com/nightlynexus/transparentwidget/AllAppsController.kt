@@ -136,7 +136,9 @@ internal class AllAppsController(
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
-    private val specialActionCount = 3
+    // TODO: Decide if custom click actions is a good feature.
+    private val showCustomClickActionSelection = false
+    private val specialActionCount = if (showCustomClickActionSelection) 3 else 2
     private var showLoading = true
 
     private inner class SpecialActionViewHolder(itemView: View) : ViewHolder(itemView),
@@ -292,7 +294,7 @@ internal class AllAppsController(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
       when (holder) {
         is SpecialActionViewHolder -> {
-          when (position) {
+          when (if (showCustomClickActionSelection) position else position + 1) {
             0 -> {
               holder.setCustomClickActionSelection()
             }
