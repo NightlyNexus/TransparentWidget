@@ -3,6 +3,8 @@
   <string name="app_name">Transparent Widget</string>
   <string name="app_widget_description">Can launch an app when clicked</string>
   <string name="pin_widget_not_supported">Add Transparent Widget from your home screen widget list</string>
+  <string name="special_action_custom_click_action_selection_title">Start custom intent</string>
+  <string name="special_action_custom_click_action_selection_subtitle">select to configure</string>
   <string name="special_action_url_selection_title">Open URL on click</string>
   <string name="special_action_url_selection_subtitle">select to configure</string>
   <string name="special_action_do_nothing_title">Do nothing on click</string>
@@ -15,4 +17,9 @@
   <string name="url_selection_url_hint">URL to open on click</string>
   <string name="url_selection_done">Done</string>
   <string name="url_selection_invalid_url">Invalid URL</string>
+  <string name="custom_click_action_uri_hint">Enter intent as uri string</string>
+  <string name="custom_click_action_activity">Start activity</string>
+  <string name="custom_click_action_service">Start service</string>
+  <string name="custom_click_action_broadcast">Send broadcast</string>
+  <string name="custom_click_action_done">Done</string>
 </resources>
