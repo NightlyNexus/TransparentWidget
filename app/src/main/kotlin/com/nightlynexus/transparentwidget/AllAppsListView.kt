@@ -25,6 +25,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   private lateinit var handler: Handler
   private lateinit var onClickedActionSelectedListener: OnClickedActionSelectedListener
   @Volatile private var attached = false
+  private var showLoading = true
 
   interface OnClickedActionSelectedListener {
     fun onUrlSelectionSelected()
@@ -160,15 +161,16 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     private val appsAndActivities = mutableListOf<Any>()
 
     fun setApps(apps: List<DisplayableApp>) {
+      val wasShowingLoading = showLoading
+      showLoading = false
       var oldSize = appsAndActivities.size
-      val wasLoading = oldSize == 0 // TODO: Check if loading instead of size == 0.
       appsAndActivities.clear()
-      if (wasLoading) {
-        oldSize++
+      if (wasShowingLoading) {
+        oldSize++ // Add 1 for the loading view.
       }
       // The first two items are the URL selection and the do nothing.
-      val rangeRemovePositionStart = 2
-      adapter.notifyItemRangeRemoved(rangeRemovePositionStart, oldSize)
+      val positionStart = 2
+      adapter.notifyItemRangeRemoved(positionStart, oldSize)
       for (i in apps.indices) {
         val app = apps[i]
         appsAndActivities += app
@@ -176,7 +178,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(app.displayActivities)
         }
       }
-      adapter.notifyItemRangeInserted(1, appsAndActivities.size)
+      adapter.notifyItemRangeInserted(positionStart, appsAndActivities.size)
     }
 
     override fun getPopupText(view: View, position: Int): CharSequence {
@@ -184,7 +186,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       if (position <= 1) {
         return ""
       }
-      if (position == 2 && appsAndActivities.isEmpty()) { // TODO: Check if loading instead of size == 0.
+      if (position == 2 && showLoading) {
         // The loading view.
         return ""
       }
@@ -217,11 +219,12 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     override fun getItemCount(): Int {
-      val size = appsAndActivities.size
-      return if (size == 0) { // TODO: Check if loading instead of size == 0.
-        3 // The URL selection, the do nothing, and the loading.
+      // The first two items are the URL selection and the do nothing.
+      val itemCount = appsAndActivities.size + 2
+      return if (showLoading) {
+        itemCount + 1 // The loading view.
       } else {
-        size + 2 // Add the URL selection and the do nothing.
+        itemCount
       }
     }
 
@@ -230,7 +233,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       if (position <= 1) {
         return R.layout.special_action_list_item
       }
-      if (position == 2 && appsAndActivities.isEmpty()) { // TODO: Check if loading instead of size == 0.
+      if (position == 2 && showLoading) {
         return R.layout.loading_list_item
       }
       // Decrease the index by 2 for the URL selection and the do nothing.
