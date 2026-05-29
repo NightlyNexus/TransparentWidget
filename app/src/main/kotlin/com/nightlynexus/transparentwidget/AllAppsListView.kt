@@ -25,6 +25,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   private lateinit var handler: Handler
   private lateinit var onClickedActionSelectedListener: OnClickedActionSelectedListener
   @Volatile private var attached = false
+  private var showLoading = true
 
   interface OnClickedActionSelectedListener {
     fun onUrlSelectionSelected()
@@ -98,7 +99,48 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
-    private inner class DoNothingViewHolder(itemView: View) : ViewHolder(itemView)
+    private inner class SpecialActionViewHolder(itemView: View) : ViewHolder(itemView),
+      OnClickListener {
+      private val title = itemView.findViewById<TextView>(
+        R.id.special_action_list_item_title
+      )
+      private val subtitle = itemView.findViewById<TextView>(
+        R.id.special_action_list_item_subtitle
+      )
+      private var type = -1
+
+      init {
+        itemView.setOnClickListener(this)
+      }
+
+      fun setUrlSelection() {
+        title.setText(R.string.special_action_url_selection_title)
+        subtitle.setText(R.string.special_action_url_selection_subtitle)
+        type = 0
+      }
+
+      fun setDoNothing() {
+        title.setText(R.string.special_action_do_nothing_title)
+        subtitle.setText(R.string.special_action_do_nothing_subtitle)
+        type = 1
+      }
+
+      override fun onClick(v: View) {
+        when (type) {
+          0 -> {
+            onClickedActionSelectedListener.onUrlSelectionSelected()
+          }
+
+          1 -> {
+            onClickedActionSelectedListener.onDoNothingSelected()
+          }
+
+          else -> {
+            throw IllegalStateException("Unexpected special action type: $type")
+          }
+        }
+      }
+    }
 
     private inner class LoadingViewHolder(itemView: View) : ViewHolder(itemView)
 
@@ -119,12 +161,16 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     private val appsAndActivities = mutableListOf<Any>()
 
     fun setApps(apps: List<DisplayableApp>) {
+      val wasShowingLoading = showLoading
+      showLoading = false
       var oldSize = appsAndActivities.size
-      if (oldSize == 0) {
-        oldSize = 1 // The loading view.
-      }
       appsAndActivities.clear()
-      adapter.notifyItemRangeRemoved(1, oldSize)
+      if (wasShowingLoading) {
+        oldSize++ // Add 1 for the loading view.
+      }
+      // The first two items are the URL selection and the do nothing.
+      val positionStart = 2
+      adapter.notifyItemRangeRemoved(positionStart, oldSize)
       for (i in apps.indices) {
         val app = apps[i]
         appsAndActivities += app
@@ -132,20 +178,20 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(app.displayActivities)
         }
       }
-      adapter.notifyItemRangeInserted(1, appsAndActivities.size)
+      adapter.notifyItemRangeInserted(positionStart, appsAndActivities.size)
     }
 
     override fun getPopupText(view: View, position: Int): CharSequence {
-      if (position == 0) {
-        // The "do nothing" view at the top.
+      // The first two items are the URL selection and the do nothing.
+      if (position <= 1) {
         return ""
       }
-      if (appsAndActivities.isEmpty() && position == 1) {
+      if (position == 2 && showLoading) {
         // The loading view.
         return ""
       }
-      // Decrease the index by 1 for the "do nothing" view at the top.
-      return when (val item = appsAndActivities[position - 1]) {
+      // Decrease the index by 2 for the URL selection and the do nothing.
+      return when (val item = appsAndActivities[position - 2]) {
         is DisplayableApp -> {
           item.firstLetter
         }
@@ -155,7 +201,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         }
 
         else -> {
-          throw IllegalStateException(item::class.java.toString())
+          throw IllegalStateException(item::class.toString())
         }
       }
     }
@@ -164,13 +210,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       val inflater = LayoutInflater.from(parent.context)
       val root = inflater.inflate(viewType, parent, false)
       return when (viewType) {
-        R.layout.do_nothing_list_item -> {
-          root.setOnClickListener {
-            onClickedActionSelectedListener.onDoNothingSelected()
-          }
-          DoNothingViewHolder(root)
-        }
-
+        R.layout.special_action_list_item -> SpecialActionViewHolder(root)
         R.layout.loading_list_item -> LoadingViewHolder(root)
         R.layout.app_list_item -> AppViewHolder(root)
         R.layout.activity_list_item -> ActivityViewHolder(root)
@@ -179,23 +219,25 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     override fun getItemCount(): Int {
-      val size = appsAndActivities.size
-      return if (size == 0) {
-        2
+      // The first two items are the URL selection and the do nothing.
+      val itemCount = appsAndActivities.size + 2
+      return if (showLoading) {
+        itemCount + 1 // The loading view.
       } else {
-        size + 1
+        itemCount
       }
     }
 
     override fun getItemViewType(position: Int): Int {
-      if (position == 0) {
-        return R.layout.do_nothing_list_item
+      // The first two items are the URL selection and the do nothing.
+      if (position <= 1) {
+        return R.layout.special_action_list_item
       }
-      if (position == 1 && appsAndActivities.isEmpty()) {
+      if (position == 2 && showLoading) {
         return R.layout.loading_list_item
       }
-      // Decrease the index by 1 for the "do nothing" view at the top.
-      return when (val item = appsAndActivities[position - 1]) {
+      // Decrease the index by 2 for the URL selection and the do nothing.
+      return when (val item = appsAndActivities[position - 2]) {
         is DisplayableApp -> R.layout.app_list_item
         is DisplayableApp.DisplayableActivity -> R.layout.activity_list_item
         else -> throw IllegalStateException(item::class.toString())
@@ -204,8 +246,20 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
       when (holder) {
-        is DoNothingViewHolder -> {
-          // No-op.
+        is SpecialActionViewHolder -> {
+          when (position) {
+            0 -> {
+              holder.setUrlSelection()
+            }
+
+            1 -> {
+              holder.setDoNothing()
+            }
+
+            else -> {
+              throw IllegalStateException("Unexpected special action position: $position")
+            }
+          }
         }
 
         is LoadingViewHolder -> {
@@ -219,8 +273,8 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-      // Decrease the index by 1 for the "do nothing" view at the top.
-      val displayableApp = appsAndActivities[position - 1] as DisplayableApp
+      // Decrease the index by 2 for the URL selection and the do nothing.
+      val displayableApp = appsAndActivities[position - 2] as DisplayableApp
       holder.labelView.text = displayableApp.label
       val previousSetImageRunnable = holder.setImageRunnable
       if (previousSetImageRunnable != null) {
@@ -280,10 +334,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(index + 1, displayableApp.displayActivities)
           notifyItemRangeInserted(adapterPosition + 1, displayableApp.displayActivities.size)
           if (!canScrollVertically(1)) {
-            // Increase the position by 1 for the "do nothing" view at the top.
-            scrollToPosition(appsAndActivities.size)
+            // Increase the position by 2 for the URL selection and the do nothing.
+            scrollToPosition(appsAndActivities.size + 1)
             // Scroll through the padding. I tried scrolling 16 dips, but it wasn't enough.
             // There was still unscrolled padding at the bottom. I don't know why.
+            // TODO: Check on this.
             scrollBy(0, 999)
           }
         }
@@ -304,9 +359,9 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: ActivityViewHolder, position: Int) {
-      // Decrease the index by 1 for the "do nothing" view at the top.
-      val displayableActivity =
-        appsAndActivities[position - 1] as DisplayableApp.DisplayableActivity
+      // Decrease the index by 2 for the URL selection and the do nothing.
+      val displayableActivity = appsAndActivities[position - 2]
+        as DisplayableApp.DisplayableActivity
       holder.nameView.text = displayableActivity.activityInfo.name
       val previousSetImageAndLabelRunnable = holder.setImageAndLabelRunnable
       if (previousSetImageAndLabelRunnable != null) {
