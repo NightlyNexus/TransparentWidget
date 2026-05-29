@@ -98,6 +98,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
+    private val specialActionCount = 2
     private var showLoading = true
 
     private inner class SpecialActionViewHolder(itemView: View) : ViewHolder(itemView),
@@ -169,8 +170,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       if (wasShowingLoading) {
         oldSize++ // Add 1 for the loading view.
       }
-      // The first two items are the URL selection and the do nothing.
-      val positionStart = 2
+      val positionStart = specialActionCount
       adapter.notifyItemRangeRemoved(positionStart, oldSize)
       for (i in apps.indices) {
         val app = apps[i]
@@ -183,16 +183,15 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     override fun getPopupText(view: View, position: Int): CharSequence {
-      // The first two items are the URL selection and the do nothing.
-      if (position <= 1) {
+      if (position < specialActionCount) {
+        // The special action views.
         return ""
       }
-      if (position == 2 && showLoading) {
+      if (position == specialActionCount && showLoading) {
         // The loading view.
         return ""
       }
-      // Decrease the index by 2 for the URL selection and the do nothing.
-      return when (val item = appsAndActivities[position - 2]) {
+      return when (val item = appsAndActivities[position - specialActionCount]) {
         is DisplayableApp -> {
           item.firstLetter
         }
@@ -220,25 +219,22 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     override fun getItemCount(): Int {
-      // The first two items are the URL selection and the do nothing.
-      val itemCount = appsAndActivities.size + 2
+      val itemCount = appsAndActivities.size + specialActionCount
       return if (showLoading) {
-        itemCount + 1 // The loading view.
+        itemCount + 1 // Add 1 for the loading view.
       } else {
         itemCount
       }
     }
 
     override fun getItemViewType(position: Int): Int {
-      // The first two items are the URL selection and the do nothing.
-      if (position <= 1) {
+      if (position < specialActionCount) {
         return R.layout.special_action_list_item
       }
-      if (position == 2 && showLoading) {
+      if (position == specialActionCount && showLoading) {
         return R.layout.loading_list_item
       }
-      // Decrease the index by 2 for the URL selection and the do nothing.
-      return when (val item = appsAndActivities[position - 2]) {
+      return when (val item = appsAndActivities[position - specialActionCount]) {
         is DisplayableApp -> R.layout.app_list_item
         is DisplayableApp.DisplayableActivity -> R.layout.activity_list_item
         else -> throw IllegalStateException(item::class.toString())
@@ -274,8 +270,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-      // Decrease the index by 2 for the URL selection and the do nothing.
-      val displayableApp = appsAndActivities[position - 2] as DisplayableApp
+      val displayableApp = appsAndActivities[position - specialActionCount] as DisplayableApp
       holder.labelView.text = displayableApp.label
       val previousSetImageRunnable = holder.setImageRunnable
       if (previousSetImageRunnable != null) {
@@ -313,8 +308,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       }
       holder.expandCollapseView.setOnClickListener {
         val adapterPosition = holder.bindingAdapterPosition
-        // Decrease the index by 1 for the "do nothing" view at the top.
-        val index = adapterPosition - 1
+        val index = adapterPosition - specialActionCount
         if (displayableApp.expanded) {
           displayableApp.expanded = false
           holder.expandCollapseView.setImageResource(R.drawable.ic_expand)
@@ -335,8 +329,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(index + 1, displayableApp.displayActivities)
           notifyItemRangeInserted(adapterPosition + 1, displayableApp.displayActivities.size)
           if (!canScrollVertically(1)) {
-            // Increase the position by 2 for the URL selection and the do nothing.
-            scrollToPosition(appsAndActivities.size + 1)
+            scrollToPosition(itemCount - 1)
             // Scroll through the padding. I tried scrolling 16 dips, but it wasn't enough.
             // There was still unscrolled padding at the bottom. I don't know why.
             // TODO: Check on this.
@@ -360,8 +353,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: ActivityViewHolder, position: Int) {
-      // Decrease the index by 2 for the URL selection and the do nothing.
-      val displayableActivity = appsAndActivities[position - 2]
+      val displayableActivity = appsAndActivities[position - specialActionCount]
         as DisplayableApp.DisplayableActivity
       holder.nameView.text = displayableActivity.activityInfo.name
       val previousSetImageAndLabelRunnable = holder.setImageAndLabelRunnable
