@@ -136,7 +136,16 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     override fun getPopupText(view: View, position: Int): CharSequence {
-      return when (val item = appsAndActivities[position]) {
+      if (position == 0) {
+        // The "do nothing" view at the top.
+        return ""
+      }
+      if (appsAndActivities.isEmpty() && position == 1) {
+        // The loading view.
+        return ""
+      }
+      // Decrease the index by 1 for the "do nothing" view at the top.
+      return when (val item = appsAndActivities[position - 1]) {
         is DisplayableApp -> {
           item.firstLetter
         }
