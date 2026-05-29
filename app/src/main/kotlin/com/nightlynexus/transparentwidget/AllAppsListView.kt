@@ -171,7 +171,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         oldSize++ // Add 1 for the loading view.
       }
       val positionStart = specialActionCount
-      adapter.notifyItemRangeRemoved(positionStart, oldSize)
+      notifyItemRangeRemoved(positionStart, oldSize)
       for (i in apps.indices) {
         val app = apps[i]
         appsAndActivities += app
@@ -179,7 +179,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(app.displayActivities)
         }
       }
-      adapter.notifyItemRangeInserted(positionStart, appsAndActivities.size)
+      notifyItemRangeInserted(positionStart, appsAndActivities.size)
     }
 
     override fun getPopupText(view: View, position: Int): CharSequence {
