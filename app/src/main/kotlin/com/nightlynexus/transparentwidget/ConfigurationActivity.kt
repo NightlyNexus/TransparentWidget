@@ -38,6 +38,7 @@ class ConfigurationActivity : AppCompatActivity() {
     if (extras == null) {
       // This happened on a 2025 Moto G running SDK 36.
       // There is nothing to do without the appwidget id from the intent extras, though.
+      finish()
       return
     }
     val appWidgetId = extras.getInt(
