@@ -13,7 +13,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.nightlynexus.transparentwidget.ClickAction.Companion.toClickAction
 import kotlin.concurrent.Volatile
 import me.zhanghai.android.fastscroll.DefaultAnimationHelper
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
@@ -28,7 +27,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   @Volatile private var attached = false
 
   interface OnClickedActionSelectedListener {
-    fun onClickActionSelected(clickAction: ClickAction)
+    fun onUrlSelectionSelected()
+
+    fun onDoNothingSelected()
+
+    fun onComponentNameSelected(componentName: ComponentName)
   }
 
   init {
@@ -154,7 +157,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       return when (viewType) {
         R.layout.no_component_list_item -> {
           root.setOnClickListener {
-            onClickedActionSelectedListener.onClickActionSelected(ClickAction.DoNothing)
+            onClickedActionSelectedListener.onDoNothingSelected()
           }
           NoComponentViewHolder(root)
         }
@@ -283,8 +286,8 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         holder.expandCollapseView.visibility = VISIBLE
         holder.itemView.setOnClickListener {
           val componentName = displayableApp.launchIntent.component!!
-          onClickedActionSelectedListener.onClickActionSelected(
-            componentName.toClickAction()
+          onClickedActionSelectedListener.onComponentNameSelected(
+            componentName
           )
         }
       }
@@ -326,11 +329,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         holder.labelView.text = label
       }
       holder.itemView.setOnClickListener {
-        onClickedActionSelectedListener.onClickActionSelected(
+        onClickedActionSelectedListener.onComponentNameSelected(
           ComponentName(
             displayableActivity.activityInfo.packageName,
             displayableActivity.activityInfo.name
-          ).toClickAction()
+          )
         )
       }
     }

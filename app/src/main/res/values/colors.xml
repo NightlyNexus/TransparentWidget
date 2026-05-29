@@ -7,4 +7,5 @@
   <color name="window_splash_screen_animated_icon">#00000000</color>
   <color name="needs_rebind_icon">#FFFFFF</color>
   <color name="expand_collapse_icon">#000000</color>
+  <color name="url_selection_done_text">#000000</color>
 </resources>

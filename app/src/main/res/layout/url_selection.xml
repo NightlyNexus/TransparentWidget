@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+  <EditText
+      android:id="@+id/url"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="32dp"
+      android:layout_marginTop="32dp"
+      android:layout_marginBottom="8dp"
+      android:hint="@string/url_selection_url_hint"
+      android:importantForAutofill="no"
+      android:inputType="textUri" />
+
+  <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="end"
+      android:layout_marginHorizontal="32dp"
+      android:layout_marginBottom="24dp"
+      android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/url_selection_invalid_url"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:alpha="0"
+        android:text="@string/url_selection_invalid_url" />
+
+    <Button
+        android:id="@+id/done"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="?colorButtonNormal"
+        android:text="@string/url_selection_done"
+        android:textColor="@color/url_selection_done_text"
+        app:rippleColor="?colorControlHighlight" />
+  </LinearLayout>
+</LinearLayout>

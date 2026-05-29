@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <color name="expand_collapse_icon">#FFFFFF</color>
+  <color name="url_selection_done_text">#FFFFFF</color>
 </resources>

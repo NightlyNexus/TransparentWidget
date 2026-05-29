@@ -10,4 +10,7 @@
   <string name="collapse_content_description">Collapse</string>
   <string name="expand_content_description">Expand</string>
   <string name="needs_rebind_icon_content_description">Reset click action for widget</string>
+  <string name="url_selection_url_hint">URL to open on click</string>
+  <string name="url_selection_done">Done</string>
+  <string name="url_selection_invalid_url">Invalid URL</string>
 </resources>
