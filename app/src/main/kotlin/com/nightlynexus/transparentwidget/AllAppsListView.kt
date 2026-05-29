@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -76,22 +77,21 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     attached = false
   }
 
+  @WorkerThread
   private fun List<DisplayableApp>.preloadApps() {
-    executor.execute {
-      for (i in indices) {
-        if (!attached) {
-          return@execute
-        }
-        val displayableApp = this[i]
-        if (displayableApp.icon == null) {
-          displayableApp.loadIcon(packageManager)
-        }
-        if (displayableApp.launchIntent == null) {
-          for (j in displayableApp.displayActivities.indices) {
-            val displayActivity = displayableApp.displayActivities[j]
-            displayActivity.loadIcon(packageManager)
-            displayActivity.loadLabel(packageManager)
-          }
+    for (i in indices) {
+      if (!attached) {
+        return
+      }
+      val displayableApp = this[i]
+      if (displayableApp.icon == null) {
+        displayableApp.loadIcon(packageManager)
+      }
+      if (displayableApp.launchIntent == null) {
+        for (j in displayableApp.displayActivities.indices) {
+          val displayActivity = displayableApp.displayActivities[j]
+          displayActivity.loadIcon(packageManager)
+          displayActivity.loadLabel(packageManager)
         }
       }
     }
