@@ -3,7 +3,7 @@
     android:width="24dp"
     android:height="24dp"
     android:alpha="0.8"
-    android:tint="#000000"
+    android:tint="@color/expand_collapse_icon"
     android:viewportWidth="24"
     android:viewportHeight="24">
   <group

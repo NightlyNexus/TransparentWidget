@@ -6,4 +6,5 @@
   <color name="widget_background_end">#00000000</color>
   <color name="window_splash_screen_animated_icon">#00000000</color>
   <color name="needs_rebind_icon">#FFFFFF</color>
+  <color name="expand_collapse_icon">#000000</color>
 </resources>
