@@ -28,6 +28,7 @@ class ConfigurationActivity : AppCompatActivity() {
   private lateinit var onBackPressedCallback: OnBackPressedCallback
   private lateinit var stateStack: StateStack
   private lateinit var urlSelectionDialog: UrlSelectionDialog
+  private var finishingInvalidLaunch = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
     appWidgetIdsToComponentsStorage =
@@ -39,6 +40,7 @@ class ConfigurationActivity : AppCompatActivity() {
       // This happened on a 2025 Moto G running SDK 36.
       // There is nothing to do without the appwidget id from the intent extras, though.
       finish()
+      finishingInvalidLaunch = true
       return
     }
     val appWidgetId = extras.getInt(
@@ -50,6 +52,7 @@ class ConfigurationActivity : AppCompatActivity() {
       // When does this happen? How do we get the appWidgetId? What behavior does this now have?
       // Hopefully, these devices try launching the configuration activity again.
       finish()
+      finishingInvalidLaunch = true
       return
     }
     val resultValue = Intent().putExtra(
@@ -206,6 +209,9 @@ class ConfigurationActivity : AppCompatActivity() {
 
   override fun onDestroy() {
     super.onDestroy()
+    if (finishingInvalidLaunch) {
+      return
+    }
     stateStack.getCurrentController()!!.onDestroy()
     urlSelectionDialog.dismiss()
   }
