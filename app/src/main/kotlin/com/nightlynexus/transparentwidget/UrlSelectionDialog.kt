@@ -30,6 +30,7 @@ internal class UrlSelectionDialog(
     val urlEditText = dialog.findViewById<TextView>(R.id.url)!!
     val invalidUrlTextView = dialog.findViewById<View>(R.id.url_selection_invalid_url)!!
     val doneButton = dialog.findViewById<View>(R.id.done)!!
+    urlEditText.filters = arrayOf(PlainTextInputFilter())
     doneButton.setOnClickListener {
       val text = urlEditText.text
       val validUrl = Patterns.WEB_URL.matcher(text).matches()

@@ -93,6 +93,8 @@ internal class CustomClickActionController(
       }
     }
 
+    uriEditText.filters = arrayOf(PlainTextInputFilter())
+
     doneButton.setOnClickListener {
       val uri = uriEditText.text.toString()
       val intent = Intent.parseUri(uri, 0)
