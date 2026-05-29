@@ -330,10 +330,6 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           notifyItemRangeInserted(adapterPosition + 1, displayableApp.displayActivities.size)
           if (!canScrollVertically(1)) {
             scrollToPosition(itemCount - 1)
-            // Scroll through the padding. I tried scrolling 16 dips, but it wasn't enough.
-            // There was still unscrolled padding at the bottom. I don't know why.
-            // TODO: Check on this.
-            scrollBy(0, 999)
           }
         }
       }
