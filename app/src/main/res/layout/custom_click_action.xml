@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+  <EditText
+      android:id="@+id/uri"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="32dp"
+      android:layout_marginTop="32dp"
+      android:hint="@string/custom_click_action_uri_hint"
+      android:importantForAutofill="no"
+      android:inputType="textUri|textMultiLine" />
+
+  <RadioGroup
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="32dp"
+      android:layout_marginTop="16dp"
+      android:orientation="vertical">
+
+    <RadioButton
+        android:id="@+id/activity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/custom_click_action_activity" />
+
+    <RadioButton
+        android:id="@+id/service"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/custom_click_action_service" />
+
+    <RadioButton
+        android:id="@+id/broadcast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/custom_click_action_broadcast" />
+  </RadioGroup>
+
+  <Button
+      android:id="@+id/done"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginHorizontal="32dp"
+      android:layout_marginTop="16dp"
+      android:backgroundTint="?colorButtonNormal"
+      android:text="@string/custom_click_action_done"
+      android:textColor="@color/url_selection_done_text"
+      app:rippleColor="?colorControlHighlight" />
+</LinearLayout>

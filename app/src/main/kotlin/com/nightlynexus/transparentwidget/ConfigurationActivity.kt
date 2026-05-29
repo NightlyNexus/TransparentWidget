@@ -63,8 +63,17 @@ class ConfigurationActivity : AppCompatActivity() {
 
     val contentView = findViewById<ViewGroup>(android.R.id.content)
 
-    val onClickedActionSelectedListener =
-      object : AllAppsController.OnClickedActionSelectedListener {
+    val onItemSelectedListener =
+      object : AllAppsController.OnItemSelectedListener {
+        override fun onCustomClickActionSelectionSelected() {
+          stateStack.push(
+            CustomClickActionController.Factory(
+              appWidgetId
+            )
+          )
+          onBackPressedCallback.isEnabled = true
+        }
+
         override fun onUrlSelectionSelected() {
           urlSelectionDialog.show()
         }
@@ -86,10 +95,29 @@ class ConfigurationActivity : AppCompatActivity() {
         }
       }
 
+    val onCustomClickActionSelectedListener =
+      object : CustomClickActionController.OnCustomClickActionSelectedListener {
+        override fun onCustomClickActionSelected(clickAction: ClickAction) {
+          saveClickActionAndFinish(
+            appWidgetId,
+            clickAction,
+            resultValue
+          )
+        }
+      }
+
     dependencies = mutableMapOf<Any, Any>().apply {
       put(
-        AllAppsController.OnClickedActionSelectedListener::class.java,
-        onClickedActionSelectedListener
+        AppWidgetIdsToComponentsStorage::class.java,
+        appWidgetIdsToComponentsStorage
+      )
+      put(
+        AllAppsController.OnItemSelectedListener::class.java,
+        onItemSelectedListener
+      )
+      put(
+        CustomClickActionController.OnCustomClickActionSelectedListener::class.java,
+        onCustomClickActionSelectedListener
       )
     }
 

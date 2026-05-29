@@ -26,11 +26,13 @@ import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupTextProvider
 
 internal class AllAppsController(
-  private val onClickedActionSelectedListener: OnClickedActionSelectedListener,
+  private val onItemSelectedListener: OnItemSelectedListener,
   parentView: ViewGroup,
   savedState: SavedState?
 ) : Controller<AllAppsController.SavedState> {
-  interface OnClickedActionSelectedListener {
+  interface OnItemSelectedListener {
+    fun onCustomClickActionSelectionSelected()
+
     fun onUrlSelectionSelected()
 
     fun onDoNothingSelected()
@@ -134,7 +136,7 @@ internal class AllAppsController(
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
-    private val specialActionCount = 2
+    private val specialActionCount = 3
     private var showLoading = true
 
     private inner class SpecialActionViewHolder(itemView: View) : ViewHolder(itemView),
@@ -151,26 +153,36 @@ internal class AllAppsController(
         itemView.setOnClickListener(this)
       }
 
+      fun setCustomClickActionSelection() {
+        title.setText(R.string.special_action_custom_click_action_selection_title)
+        subtitle.setText(R.string.special_action_custom_click_action_selection_subtitle)
+        type = 0
+      }
+
       fun setUrlSelection() {
         title.setText(R.string.special_action_url_selection_title)
         subtitle.setText(R.string.special_action_url_selection_subtitle)
-        type = 0
+        type = 1
       }
 
       fun setDoNothing() {
         title.setText(R.string.special_action_do_nothing_title)
         subtitle.setText(R.string.special_action_do_nothing_subtitle)
-        type = 1
+        type = 2
       }
 
       override fun onClick(v: View) {
         when (type) {
           0 -> {
-            onClickedActionSelectedListener.onUrlSelectionSelected()
+            onItemSelectedListener.onCustomClickActionSelectionSelected()
           }
 
           1 -> {
-            onClickedActionSelectedListener.onDoNothingSelected()
+            onItemSelectedListener.onUrlSelectionSelected()
+          }
+
+          2 -> {
+            onItemSelectedListener.onDoNothingSelected()
           }
 
           else -> {
@@ -282,10 +294,14 @@ internal class AllAppsController(
         is SpecialActionViewHolder -> {
           when (position) {
             0 -> {
-              holder.setUrlSelection()
+              holder.setCustomClickActionSelection()
             }
 
             1 -> {
+              holder.setUrlSelection()
+            }
+
+            2 -> {
               holder.setDoNothing()
             }
 
@@ -376,7 +392,7 @@ internal class AllAppsController(
         holder.expandCollapseView.visibility = VISIBLE
         holder.itemView.setOnClickListener {
           val componentName = displayableApp.launchIntent.component!!
-          onClickedActionSelectedListener.onComponentNameSelected(
+          onItemSelectedListener.onComponentNameSelected(
             componentName
           )
         }
@@ -418,7 +434,7 @@ internal class AllAppsController(
         holder.labelView.text = label
       }
       holder.itemView.setOnClickListener {
-        onClickedActionSelectedListener.onComponentNameSelected(
+        onItemSelectedListener.onComponentNameSelected(
           ComponentName(
             displayableActivity.activityInfo.packageName,
             displayableActivity.activityInfo.name
@@ -520,11 +536,11 @@ internal class AllAppsController(
       parentView: ViewGroup,
       savedState: SavedState?
     ): AllAppsController {
-      val onClickedActionSelectedListener =
-        dependencies[OnClickedActionSelectedListener::class.java]
-          as OnClickedActionSelectedListener
+      val onItemSelectedListener =
+        dependencies[OnItemSelectedListener::class.java]
+          as OnItemSelectedListener
       return AllAppsController(
-        onClickedActionSelectedListener,
+        onItemSelectedListener,
         parentView,
         savedState
       )
