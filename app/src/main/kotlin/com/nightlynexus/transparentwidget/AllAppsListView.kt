@@ -98,7 +98,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
-    private inner class NoComponentViewHolder(itemView: View) : ViewHolder(itemView)
+    private inner class DoNothingViewHolder(itemView: View) : ViewHolder(itemView)
 
     private inner class LoadingViewHolder(itemView: View) : ViewHolder(itemView)
 
@@ -155,11 +155,11 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       val inflater = LayoutInflater.from(parent.context)
       val root = inflater.inflate(viewType, parent, false)
       return when (viewType) {
-        R.layout.no_component_list_item -> {
+        R.layout.do_nothing_list_item -> {
           root.setOnClickListener {
             onClickedActionSelectedListener.onDoNothingSelected()
           }
-          NoComponentViewHolder(root)
+          DoNothingViewHolder(root)
         }
 
         R.layout.loading_list_item -> LoadingViewHolder(root)
@@ -180,12 +180,12 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
 
     override fun getItemViewType(position: Int): Int {
       if (position == 0) {
-        return R.layout.no_component_list_item
+        return R.layout.do_nothing_list_item
       }
       if (position == 1 && appsAndActivities.isEmpty()) {
         return R.layout.loading_list_item
       }
-      // Decrease the index by 1 for the no component view at the top.
+      // Decrease the index by 1 for the "do nothing" view at the top.
       return when (val item = appsAndActivities[position - 1]) {
         is DisplayableApp -> R.layout.app_list_item
         is DisplayableApp.DisplayableActivity -> R.layout.activity_list_item
@@ -195,7 +195,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
       when (holder) {
-        is NoComponentViewHolder -> {
+        is DoNothingViewHolder -> {
           // No-op.
         }
 
@@ -210,7 +210,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-      // Decrease the index by 1 for the no component view at the top.
+      // Decrease the index by 1 for the "do nothing" view at the top.
       val displayableApp = appsAndActivities[position - 1] as DisplayableApp
       holder.labelView.text = displayableApp.label
       val previousSetImageRunnable = holder.setImageRunnable
@@ -249,7 +249,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
       }
       holder.expandCollapseView.setOnClickListener {
         val adapterPosition = holder.bindingAdapterPosition
-        // Decrease the index by 1 for the no component view at the top.
+        // Decrease the index by 1 for the "do nothing" view at the top.
         val index = adapterPosition - 1
         if (displayableApp.expanded) {
           displayableApp.expanded = false
@@ -271,7 +271,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           appsAndActivities.addAll(index + 1, displayableApp.displayActivities)
           notifyItemRangeInserted(adapterPosition + 1, displayableApp.displayActivities.size)
           if (!canScrollVertically(1)) {
-            // Increase the position by 1 for the no component view at the top.
+            // Increase the position by 1 for the "do nothing" view at the top.
             scrollToPosition(appsAndActivities.size)
             // Scroll through the padding. I tried scrolling 16 dips, but it wasn't enough.
             // There was still unscrolled padding at the bottom. I don't know why.
@@ -295,7 +295,7 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     }
 
     private fun onBindViewHolder(holder: ActivityViewHolder, position: Int) {
-      // Decrease the index by 1 for the no component view at the top.
+      // Decrease the index by 1 for the "do nothing" view at the top.
       val displayableActivity =
         appsAndActivities[position - 1] as DisplayableApp.DisplayableActivity
       holder.nameView.text = displayableActivity.activityInfo.name

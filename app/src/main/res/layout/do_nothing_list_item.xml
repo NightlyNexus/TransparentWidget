@@ -13,12 +13,12 @@
   <TextView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:text="@string/no_component_option"
+      android:text="@string/do_nothing_option"
       android:textSize="18sp" />
 
   <TextView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:text="@string/no_component_option_sub"
+      android:text="@string/do_nothing_option_sub"
       android:textSize="12sp" />
 </LinearLayout>
