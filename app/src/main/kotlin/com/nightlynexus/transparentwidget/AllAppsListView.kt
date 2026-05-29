@@ -25,7 +25,6 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   private lateinit var handler: Handler
   private lateinit var onClickedActionSelectedListener: OnClickedActionSelectedListener
   @Volatile private var attached = false
-  private var showLoading = true
 
   interface OnClickedActionSelectedListener {
     fun onUrlSelectionSelected()
@@ -99,6 +98,8 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
+    private var showLoading = true
+
     private inner class SpecialActionViewHolder(itemView: View) : ViewHolder(itemView),
       OnClickListener {
       private val title = itemView.findViewById<TextView>(
