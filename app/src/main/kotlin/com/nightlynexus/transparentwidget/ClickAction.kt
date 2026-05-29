@@ -19,7 +19,7 @@ internal sealed class ClickAction private constructor(private val ordinal: Int) 
 
   object Malformed : ClickAction(4)
 
-  object Uninstalled : ClickAction(5)
+  class Uninstalled(val invalid: HasIntent) : ClickAction(5)
 
   companion object {
     fun ComponentName.toClickAction(): ClickAction {
@@ -32,22 +32,37 @@ internal sealed class ClickAction private constructor(private val ordinal: Int) 
       if (value == null) {
         return Malformed
       }
-      val index = value.indexOf('\n')
+      return decodeClickAction(value, startIndex = 0)
+    }
+
+    private fun decodeClickAction(value: String, startIndex: Int): ClickAction {
+      val index = value.indexOf('\n', startIndex)
       if (index == -1) {
         val ordinal = value.toIntOrNull()
         return when (ordinal) {
           null -> Malformed
           3 -> DoNothing
           4 -> Malformed
-          5 -> Uninstalled
           else -> Malformed
         }
       }
-      val ordinal = value.substring(0, index).toIntOrNull()
+      val ordinal = value.substring(startIndex, index).toIntOrNull()
       if (ordinal == null) {
         return Malformed
       }
-      val uri = value.substring(index + 1)
+      if (ordinal == 5) {
+        if (startIndex != 0) {
+          // Uninstalled's invalid ClickAction/HasInput is only one depth.
+          // Avoid bad input causing a stack overflow.
+          return Malformed
+        }
+        val innerClickAction = decodeClickAction(value, startIndex = index + 1)
+        if (innerClickAction !is HasIntent) {
+          return Malformed
+        }
+        return Uninstalled(invalid = innerClickAction)
+      }
+      val uri = value.substring(startIndex = index + 1)
       val intent = try {
         Intent.parseUri(uri, Intent.URI_INTENT_SCHEME)
       } catch (e: URISyntaxException) {
@@ -63,6 +78,11 @@ internal sealed class ClickAction private constructor(private val ordinal: Int) 
   }
 
   fun encode(): String {
+    if (this is Uninstalled) {
+      val invalidOrdinal = (invalid as ClickAction).ordinal
+      val invalidUri = invalid.intent.toUri(Intent.URI_INTENT_SCHEME)
+      return "$ordinal\n$invalidOrdinal\n$invalidUri"
+    }
     return if (this is HasIntent) {
       val uri = intent.toUri(Intent.URI_INTENT_SCHEME)
       "$ordinal\n$uri"
