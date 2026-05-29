@@ -3,17 +3,30 @@ package com.nightlynexus.transparentwidget
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.SparseArray
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import com.nightlynexus.transparentwidget.ClickAction.Companion.toClickAction
+import com.nightlynexus.transparentwidget.controller.Controller
+import com.nightlynexus.transparentwidget.controller.ControllerState
+import com.nightlynexus.transparentwidget.controller.StateStack
 
 class ConfigurationActivity : AppCompatActivity() {
-  private val urlSelectionDialogSavedStateKey = "${ConfigurationActivity::class.java}" +
-    ".urlSelectionDialogSavedStateKey"
+  private val keyStack = "${ConfigurationActivity::class.java}" +
+    ".stack"
+  private val keyCurrentControllerState = "${ConfigurationActivity::class.java}" +
+    ".currentControllerState"
+  private val keyUrlSelectionDialogSavedState = "${ConfigurationActivity::class.java}" +
+    ".urlSelectionDialogSavedState"
   private lateinit var appWidgetIdsToComponentsStorage: AppWidgetIdsToComponentsStorage
+  private lateinit var dependencies: Map<Any, Any>
+  private lateinit var onBackPressedCallback: OnBackPressedCallback
+  private lateinit var stateStack: StateStack
   private lateinit var urlSelectionDialog: UrlSelectionDialog
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,10 +57,10 @@ class ConfigurationActivity : AppCompatActivity() {
     )
     setResult(RESULT_CANCELED, resultValue)
 
-    setContentView(R.layout.configuration_activity)
-    val appsList = findViewById<AllAppsListView>(R.id.apps_list)
-    appsList.setOnComponentNameClickedListener(
-      object : AllAppsListView.OnClickedActionSelectedListener {
+    val contentView = findViewById<ViewGroup>(android.R.id.content)
+
+    val onClickedActionSelectedListener =
+      object : AllAppsController.OnClickedActionSelectedListener {
         override fun onUrlSelectionSelected() {
           urlSelectionDialog.show()
         }
@@ -68,16 +81,73 @@ class ConfigurationActivity : AppCompatActivity() {
           )
         }
       }
-    )
 
-    val urlSelectionDialogSavedState: SparseArray<Parcelable>?
-    if (savedInstanceState == null) {
-      urlSelectionDialogSavedState = null
-    } else {
-      urlSelectionDialogSavedState = savedInstanceState.getSparseParcelableArray(
-        urlSelectionDialogSavedStateKey
+    dependencies = mutableMapOf<Any, Any>().apply {
+      put(
+        AllAppsController.OnClickedActionSelectedListener::class.java,
+        onClickedActionSelectedListener
       )
     }
+
+    val urlSelectionDialogSavedState: SparseArray<Parcelable>?
+    val onBackPressedCallbackEnabled: Boolean
+    if (savedInstanceState == null) {
+      urlSelectionDialogSavedState = null
+
+      stateStack = StateStack(
+        dependencies,
+        contentView,
+        index = 0,
+        stack = emptyList(),
+        controllerState = null
+      )
+      stateStack.push(AllAppsController.Factory())
+      onBackPressedCallbackEnabled = false
+    } else {
+      urlSelectionDialogSavedState = savedInstanceState.getSparseParcelableArray(
+        keyUrlSelectionDialogSavedState
+      )
+
+      val stack: List<ControllerState<Controller<Parcelable>, Parcelable>>
+      val controllerState: ControllerState<Controller<Parcelable>, Parcelable>
+      if (SDK_INT >= 33) {
+        @Suppress("UNCHECKED_CAST")
+        stack = savedInstanceState.getParcelableArrayList(
+          keyStack,
+          ControllerState::class.java
+        ) as List<ControllerState<Controller<Parcelable>, Parcelable>>
+        @Suppress("UNCHECKED_CAST")
+        controllerState = savedInstanceState.getParcelable(
+          keyCurrentControllerState,
+          ControllerState::class.java
+        ) as ControllerState<Controller<Parcelable>, Parcelable>
+      } else {
+        @Suppress("DEPRECATION")
+        stack = savedInstanceState.getParcelableArrayList(
+          keyStack
+        )!!
+        @Suppress("DEPRECATION")
+        controllerState = savedInstanceState.getParcelable(
+          keyCurrentControllerState
+        )!!
+      }
+      stateStack = StateStack(
+        dependencies,
+        contentView,
+        index = 0,
+        stack,
+        controllerState
+      )
+      onBackPressedCallbackEnabled = stack.isNotEmpty()
+    }
+
+    onBackPressedCallback = object : OnBackPressedCallback(onBackPressedCallbackEnabled) {
+      override fun handleOnBackPressed() {
+        stateStack.pop()
+        onBackPressedCallback.isEnabled = !stateStack.isEmpty()
+      }
+    }
+    onBackPressedDispatcher.addCallback(onBackPressedCallback)
 
     urlSelectionDialog = UrlSelectionDialog(
       this,
@@ -123,9 +193,11 @@ class ConfigurationActivity : AppCompatActivity() {
 
   override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
+    outState.putParcelableArrayList(keyStack, stateStack.getStack())
+    outState.putParcelable(keyCurrentControllerState, stateStack.saveCurrent())
     if (urlSelectionDialog.isShowing()) {
       outState.putSparseParcelableArray(
-        urlSelectionDialogSavedStateKey,
+        keyUrlSelectionDialogSavedState,
         urlSelectionDialog.saveState()
       )
     }
@@ -133,6 +205,7 @@ class ConfigurationActivity : AppCompatActivity() {
 
   override fun onDestroy() {
     super.onDestroy()
+    stateStack.getCurrentController()!!.onDestroy()
     urlSelectionDialog.dismiss()
   }
 }

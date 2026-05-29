@@ -1,12 +1,16 @@
 package com.nightlynexus.transparentwidget
 
 import android.content.ComponentName
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
-import android.util.AttributeSet
+import android.os.Looper
+import android.os.Parcel
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.OnClickListener
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -14,19 +18,18 @@ import androidx.annotation.WorkerThread
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.nightlynexus.transparentwidget.controller.Controller
 import kotlin.concurrent.Volatile
 import me.zhanghai.android.fastscroll.DefaultAnimationHelper
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupTextProvider
 
-internal class AllAppsListView(context: Context, attrs: AttributeSet) :
-  RecyclerView(context, attrs) {
-  private val packageManager = context.packageManager
-  private val adapter = Adapter()
-  private lateinit var handler: Handler
-  private lateinit var onClickedActionSelectedListener: OnClickedActionSelectedListener
-  @Volatile private var attached = false
-
+internal class AllAppsController(
+  private val onClickedActionSelectedListener: OnClickedActionSelectedListener,
+  parentView: ViewGroup,
+  savedState: SavedState?
+) : Controller<AllAppsController.SavedState> {
   interface OnClickedActionSelectedListener {
     fun onUrlSelectionSelected()
 
@@ -35,52 +38,73 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
     fun onComponentNameSelected(componentName: ComponentName)
   }
 
+  private val context = parentView.context
+  private val rootView: RecyclerView
+  private val packageManager = context.packageManager
+  private val adapter = Adapter()
+  private val handler = Handler(Looper.getMainLooper())
+  @Volatile private var destroyed = false
+  private var loadedDisplayableApps: List<DisplayableApp>? = null
+
   init {
-    setAdapter(adapter)
-    layoutManager = LinearLayoutManager(context)
-    itemAnimator = DefaultItemAnimator().apply {
+    val inflater = LayoutInflater.from(context)
+    rootView = inflater.inflate(
+      R.layout.all_apps,
+      parentView,
+      false
+    ) as RecyclerView
+    parentView.requestApplyInsets()
+
+    rootView.setAdapter(adapter)
+    rootView.layoutManager = LinearLayoutManager(context)
+    rootView.itemAnimator = DefaultItemAnimator().apply {
       addDuration = 50L
       removeDuration = 50L
       moveDuration = 150L
     }
-  }
 
-  fun setOnComponentNameClickedListener(listener: OnClickedActionSelectedListener) {
-    onClickedActionSelectedListener = listener
-  }
+    val displayableApps: List<DisplayableApp>?
+    if (savedState == null) {
+      displayableApps = null
+    } else {
+      displayableApps = savedState.displayableApps
+    }
 
-  override fun onAttachedToWindow() {
-    super.onAttachedToWindow()
-    attached = true
-    handler = getHandler()
-    executor.execute {
-      val displayableApps = packageManager.loadDisplayableApps()
-      handler.post {
-        adapter.setApps(displayableApps)
-        FastScrollerBuilder(this)
-          .useMd2Style()
-          .apply {
-            setAnimationHelper(object : DefaultAnimationHelper(this@AllAppsListView) {
-              override fun getScrollbarAutoHideDelayMillis(): Int {
-                return 250
-              }
-            })
-          }
-          .build()
+    if (displayableApps == null) {
+      executor.execute {
+        val displayableApps = packageManager.loadDisplayableApps()
+        handler.post {
+          setApps(displayableApps)
+        }
+        displayableApps.preloadApps()
       }
-      displayableApps.preloadApps()
+    } else {
+      setApps(displayableApps)
+      executor.execute {
+        displayableApps.preloadApps()
+      }
     }
   }
 
-  override fun onDetachedFromWindow() {
-    super.onDetachedFromWindow()
-    attached = false
+  private fun setApps(displayableApps: List<DisplayableApp>) {
+    loadedDisplayableApps = displayableApps
+    adapter.setApps(displayableApps)
+    FastScrollerBuilder(rootView)
+      .useMd2Style()
+      .apply {
+        setAnimationHelper(object : DefaultAnimationHelper(rootView) {
+          override fun getScrollbarAutoHideDelayMillis(): Int {
+            return 250
+          }
+        })
+      }
+      .build()
   }
 
   @WorkerThread
   private fun List<DisplayableApp>.preloadApps() {
     for (i in indices) {
-      if (!attached) {
+      if (destroyed) {
         return
       }
       val displayableApp = this[i]
@@ -95,6 +119,18 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
         }
       }
     }
+  }
+
+  override fun saveState(): SavedState {
+    return SavedState(loadedDisplayableApps)
+  }
+
+  override fun getView(): View {
+    return rootView
+  }
+
+  override fun onDestroy() {
+    destroyed = true
   }
 
   private inner class Adapter : RecyclerView.Adapter<ViewHolder>(), PopupTextProvider {
@@ -328,8 +364,8 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
             context.getText(R.string.collapse_content_description)
           appsAndActivities.addAll(index + 1, displayableApp.displayActivities)
           notifyItemRangeInserted(adapterPosition + 1, displayableApp.displayActivities.size)
-          if (!canScrollVertically(1)) {
-            scrollToPosition(itemCount - 1)
+          if (!rootView.canScrollVertically(1)) {
+            rootView.scrollToPosition(itemCount - 1)
           }
         }
       }
@@ -449,6 +485,65 @@ internal class AllAppsListView(context: Context, attrs: AttributeSet) :
           )
           labelView.text = label
         }
+      }
+    }
+  }
+
+  internal class SavedState(
+    val displayableApps: List<DisplayableApp>?
+  ) : Parcelable {
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+      parcel.writeNullableParcelableListCompat(displayableApps, flags)
+    }
+
+    override fun describeContents(): Int {
+      return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<SavedState> {
+      override fun createFromParcel(parcel: Parcel): SavedState {
+        val displayableApps = parcel.readNullableParcelableListCompat(DisplayableApp.CREATOR)
+        return SavedState(
+          displayableApps
+        )
+      }
+
+      override fun newArray(size: Int): Array<SavedState?> {
+        return arrayOfNulls(size)
+      }
+    }
+  }
+
+  internal class Factory : Controller.Factory<AllAppsController, SavedState> {
+    override fun create(
+      dependencies: Map<Any, Any>,
+      parentView: ViewGroup,
+      savedState: SavedState?
+    ): AllAppsController {
+      val onClickedActionSelectedListener =
+        dependencies[OnClickedActionSelectedListener::class.java]
+          as OnClickedActionSelectedListener
+      return AllAppsController(
+        onClickedActionSelectedListener,
+        parentView,
+        savedState
+      )
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+    }
+
+    override fun describeContents(): Int {
+      return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<Factory> {
+      override fun createFromParcel(parcel: Parcel): Factory {
+        return Factory()
+      }
+
+      override fun newArray(size: Int): Array<Factory?> {
+        return arrayOfNulls(size)
       }
     }
   }

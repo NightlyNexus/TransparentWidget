@@ -9,6 +9,8 @@ import android.graphics.drawable.Drawable
 import android.icu.text.Collator
 import android.icu.util.ULocale
 import android.os.Build.VERSION.SDK_INT
+import android.os.Parcel
+import android.os.Parcelable
 import androidx.annotation.WorkerThread
 import java.util.Locale
 import kotlin.concurrent.Volatile
@@ -16,17 +18,17 @@ import kotlin.concurrent.Volatile
 internal class DisplayableApp(
   val packageInfo: PackageInfo,
   val label: String,
-  val firstLetter: CharSequence,
+  val firstLetter: String,
   val launchIntent: Intent?,
   val displayActivities: List<DisplayableActivity>
-) {
+) : Parcelable {
   @Volatile var icon: Drawable? = null
   var expanded = false
 
   class DisplayableActivity(
     val activityInfo: ActivityInfo,
     val firstLetter: String
-  ) {
+  ) : Parcelable {
     val shortName = run {
       /*
        * Return the class name, either fully qualified or in a shortened form
@@ -61,6 +63,30 @@ internal class DisplayableApp(
       label = loadedLabel
       return loadedLabel
     }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+      activityInfo.writeToParcel(parcel, flags)
+      parcel.writeString(firstLetter)
+    }
+
+    override fun describeContents(): Int {
+      return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<DisplayableActivity> {
+      override fun createFromParcel(parcel: Parcel): DisplayableActivity {
+        val activityInfo = ActivityInfo.CREATOR.createFromParcel(parcel)
+        val firstLetter = parcel.readString()!!
+        return DisplayableActivity(
+          activityInfo,
+          firstLetter
+        )
+      }
+
+      override fun newArray(size: Int): Array<DisplayableActivity?> {
+        return arrayOfNulls(size)
+      }
+    }
   }
 
   @WorkerThread fun loadIcon(
@@ -69,6 +95,39 @@ internal class DisplayableApp(
     val loadedIcon = packageInfo.applicationInfo!!.loadIcon(packageManager)
     icon = loadedIcon
     return loadedIcon
+  }
+
+  override fun writeToParcel(parcel: Parcel, flags: Int) {
+    packageInfo.writeToParcel(parcel, flags)
+    parcel.writeString(label)
+    parcel.writeString(firstLetter)
+    parcel.writeNullableIntent(launchIntent, flags)
+    parcel.writeParcelableListCompat(displayActivities, flags)
+  }
+
+  override fun describeContents(): Int {
+    return 0
+  }
+
+  companion object CREATOR : Parcelable.Creator<DisplayableApp> {
+    override fun createFromParcel(parcel: Parcel): DisplayableApp {
+      val packageInfo = PackageInfo.CREATOR.createFromParcel(parcel)
+      val label = parcel.readString()!!
+      val firstLetter = parcel.readString()!!
+      val launchIntent = parcel.readNullableIntent()
+      val displayActivities = parcel.readParcelableListCompat(DisplayableActivity.CREATOR)
+      return DisplayableApp(
+        packageInfo,
+        label,
+        firstLetter,
+        launchIntent,
+        displayActivities
+      )
+    }
+
+    override fun newArray(size: Int): Array<DisplayableApp?> {
+      return arrayOfNulls(size)
+    }
   }
 }
 
