@@ -57,8 +57,10 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             packageManager.getActivityInfo(componentName)
           } catch (e: PackageManager.NameNotFoundException) {
             // The app is not installed anymore.
-            resultingClickAction = ClickAction.Uninstalled
-            storage.setClickAction(appWidgetId, ClickAction.Uninstalled)
+            resultingClickAction = ClickAction.Uninstalled(
+              invalid = clickAction
+            )
+            storage.setClickAction(appWidgetId, resultingClickAction)
             null
           }
         }
@@ -186,7 +188,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             null
           }
 
-          ClickAction.Malformed, ClickAction.Uninstalled -> {
+          ClickAction.Malformed, is ClickAction.Uninstalled -> {
             views.setNeedsRebindIcon(context)
 
             val requestCode = 0
@@ -299,8 +301,10 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           packageManager.getActivityInfo(componentName)
         } catch (e: PackageManager.NameNotFoundException) {
           // The app is not installed anymore.
-          resultingClickAction = ClickAction.Uninstalled
-          storage.setClickAction(appWidgetId, ClickAction.Uninstalled)
+          resultingClickAction = ClickAction.Uninstalled(
+            invalid = clickAction
+          )
+          storage.setClickAction(appWidgetId, resultingClickAction)
           null
         }
       }

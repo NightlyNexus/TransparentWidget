@@ -72,8 +72,23 @@ internal class CustomClickActionController(
           // Do nothing.
         }
 
-        ClickAction.Uninstalled -> {
-          // Do nothing.
+        is ClickAction.Uninstalled -> {
+          when (val invalid = existingClickAction.invalid) {
+            is ClickAction.Activity -> {
+              activityRadioButton.isChecked = true
+              uriEditText.text = invalid.intent.toUri(0)
+            }
+
+            is ClickAction.Broadcast -> {
+              serviceRadioButton.isChecked = true
+              uriEditText.text = invalid.intent.toUri(0)
+            }
+
+            is ClickAction.Service -> {
+              broadcastRadioButton.isChecked = true
+              uriEditText.text = invalid.intent.toUri(0)
+            }
+          }
         }
       }
     }
