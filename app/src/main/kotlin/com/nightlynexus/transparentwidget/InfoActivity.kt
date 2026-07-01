@@ -3,6 +3,7 @@ package com.nightlynexus.transparentwidget
 import android.app.Activity
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -17,7 +18,11 @@ class InfoActivity : Activity() {
 }
 
 internal fun Activity.promptAddWidgetAndFinish(useFallback: Boolean) {
-  startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+  try {
+    startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+  } catch (_: ActivityNotFoundException) {
+    // Nothing to do.
+  }
   val appWidgetManager = AppWidgetManager.getInstance(this)
   val callbackIntent = Intent(this, WidgetPinnedReceiver::class.java)
   val successCallback = PendingIntent.getBroadcast(
