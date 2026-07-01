@@ -17,7 +17,7 @@ class InfoActivity : Activity() {
   }
 }
 
-internal fun Activity.promptAddWidgetAndFinish(useFallback: Boolean) {
+private fun Activity.promptAddWidgetAndFinish(useFallback: Boolean) {
   try {
     startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
   } catch (_: ActivityNotFoundException) {
