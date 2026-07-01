@@ -1,16 +1,19 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+  id 'com.android.application'
+}
+
 // Manifest version information!
 def versionMajor = 1
 def versionMinor = 2
 def versionPatch = 0
 def versionBuild = 0
 
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-
 android {
   namespace 'com.nightlynexus.transparentwidget'
 
-  compileSdkVersion versions.compileSdk
+  compileSdk = versions.compileSdk
 
   defaultConfig {
     applicationId namespace
@@ -23,12 +26,14 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+    sourceCompatibility JavaVersion.VERSION_11
+    targetCompatibility JavaVersion.VERSION_11
   }
 
-  kotlinOptions {
-    jvmTarget = '1.8'
+  kotlin {
+    compilerOptions {
+      jvmTarget = JvmTarget.JVM_11
+    }
   }
 
   lint {
@@ -49,18 +54,25 @@ android {
     flavorDimensions = ['environment']
 
     internal {
+      def gitCommitSha = 'git rev-parse --short HEAD'.execute().text.trim()
       applicationIdSuffix '.internal'
-      dimension 'environment'
+      versionNameSuffix "-internal-${gitCommitSha}"
     }
 
     production {
-      dimension 'environment'
     }
   }
 
-  applicationVariants.configureEach { variant ->
-    variant.outputs.configureEach { output ->
-      outputFileName = "Transparent Widget ${variant.versionCode}.apk"
+  androidComponents {
+    onVariants(selector().all()) { variant ->
+      variant.outputs.forEach { output ->
+        def versionCode = output.versionCode.get()
+        def outputFileName = "Transparent Widget ${versionCode}.apk"
+        if (variant.flavorName == 'internal') {
+          outputFileName = 'Internal ' + outputFileName
+        }
+        output.outputFileName.set(outputFileName)
+      }
     }
   }
 }
