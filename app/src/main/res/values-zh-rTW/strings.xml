@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">透明小工具</string>
+  <string name="app_widget_description">輕觸即可啟動應用程式</string>
+  <string name="pin_widget_not_supported">請透過您的主畫面小工具清單建立項目</string>
+  <string name="special_action_custom_click_action_selection_title">啟動自訂意圖</string>
+  <string name="special_action_custom_click_action_selection_subtitle">選擇配置</string>
+  <string name="special_action_url_selection_title">輕觸時開啟 URL</string>
+  <string name="special_action_url_selection_subtitle">選擇配置</string>
+  <string name="special_action_do_nothing_title">不執行任何動作</string>
+  <string name="special_action_do_nothing_subtitle">或從下方選擇啟動應用程式</string>
+  <string name="app_icon_content_description">%1$s 個圖示</string>
+  <string name="activity_icon_content_description">%1$s 個圖示</string>
+  <string name="collapse_content_description">收合</string>
+  <string name="expand_content_description">展開</string>
+  <string name="needs_rebind_icon_content_description">重設小工具動作</string>
+  <string name="url_selection_url_hint">輕觸後開啟的 URL</string>
+  <string name="url_selection_done">完成</string>
+  <string name="url_selection_invalid_url">URL 無效</string>
+  <string name="custom_click_action_uri_hint">請輸入 URI 意圖字串</string>
+  <string name="custom_click_action_activity">啟動活動</string>
+  <string name="custom_click_action_service">啟動服務</string>
+  <string name="custom_click_action_broadcast">傳送廣播</string>
+  <string name="custom_click_action_done">完成</string>
+</resources>
