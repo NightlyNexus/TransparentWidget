@@ -147,7 +147,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
       val pendingIntent = if (clickAction is ClickAction.HasIntent) {
         views.setIcon(context, icon, label)
 
-        val requestCode = 0
+        val requestCode = appWidgetId
         val intent = clickAction.intent
         val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
           PendingIntent.FLAG_IMMUTABLE
@@ -191,7 +191,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           ClickAction.Malformed, is ClickAction.Uninstalled -> {
             views.setNeedsRebindIcon(context)
 
-            val requestCode = 0
+            val requestCode = appWidgetId
             val intent = Intent(context, ConfigurationActivity::class.java)
             intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or
