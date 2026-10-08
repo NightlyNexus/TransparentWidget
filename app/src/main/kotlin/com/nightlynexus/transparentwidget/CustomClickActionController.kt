@@ -87,12 +87,12 @@ internal class CustomClickActionController(
               uriEditText.text = invalid.intent.toUri(0)
             }
 
-            is ClickAction.Broadcast -> {
+            is ClickAction.Service -> {
               serviceRadioButton.isChecked = true
               uriEditText.text = invalid.intent.toUri(0)
             }
 
-            is ClickAction.Service -> {
+            is ClickAction.Broadcast -> {
               broadcastRadioButton.isChecked = true
               uriEditText.text = invalid.intent.toUri(0)
             }
