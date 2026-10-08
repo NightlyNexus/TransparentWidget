@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger
 internal val executor = Executors.newCachedThreadPool()
 private val appWidgetIdsToAnimators = mutableMapOf<Int, ValueAnimator>()
 
+// TODO: We need to cancel the results of asynchronous loading in here when update a widget's action
+//  or the user removes the widget.
 class TransparentAppWidgetProvider : AppWidgetProvider() {
   internal companion object {
     private const val fadeDurationMillis = 2000L
@@ -60,6 +62,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
             resultingClickAction = ClickAction.Uninstalled(
               invalid = clickAction
             )
+            // TODO: Don't save if the user removed the widget while we were loading.
             storage.setClickAction(appWidgetId, resultingClickAction)
             null
           }
@@ -304,6 +307,7 @@ class TransparentAppWidgetProvider : AppWidgetProvider() {
           resultingClickAction = ClickAction.Uninstalled(
             invalid = clickAction
           )
+          // TODO: Don't save if the user removed the widget while we were loading.
           storage.setClickAction(appWidgetId, resultingClickAction)
           null
         }
