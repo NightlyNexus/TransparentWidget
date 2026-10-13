@@ -12,6 +12,6 @@ internal class PlainTextInputFilter : InputFilter {
     dstart: Int,
     dend: Int
   ): CharSequence {
-    return source.toString()
+    return source.substring(start, end)
   }
 }
